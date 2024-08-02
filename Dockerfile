@@ -24,4 +24,4 @@ RUN git config --global --add safe.directory /app
 
 # CMD swag init -d cmd/api/,api/resource/system/,api/resource/books/ && CompileDaemon --exclude-dir="docs" --build="./build.sh" --command="./main" --color
 
-CMD CompileDaemon --color -directory=./cmd/api/
+CMD CompileDaemon --color --build="go build -C ./cmd/api/ -v -o ../../main" --command="./main"

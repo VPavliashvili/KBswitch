@@ -6,14 +6,14 @@ import (
 	"net/http"
 )
 
-type Controller struct {
+type controller struct {
 }
 
-func New() Controller {
-	return Controller{}
+func New() controller {
+	return controller{}
 }
 
-func (c Controller) HandleAbout(w http.ResponseWriter, r *http.Request) {
+func (c controller) HandleAbout(w http.ResponseWriter, r *http.Request) {
 	dto := aboutDTO{
 		Product:       "Books Api",
 		Author:        "VPavliashvili",
