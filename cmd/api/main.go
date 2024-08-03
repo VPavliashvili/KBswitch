@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"vpavliashvili.mech-switch/internal/app/api"
+	"kbswitch/internal/app/api"
 )
 
 func main() {

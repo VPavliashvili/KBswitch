@@ -3,9 +3,9 @@ package api
 import (
 	"net/http"
 
-	"vpavliashvili.mech-switch/internal/app/api/controllers/system"
-	"vpavliashvili.mech-switch/internal/app/api/middlewares"
-	"vpavliashvili.mech-switch/internal/app/api/router"
+	"kbswitch/internal/app/api/controllers/system"
+	"kbswitch/internal/app/api/middlewares"
+	"kbswitch/internal/app/api/router"
 )
 
 func InitRouter() *router.CustomMux {
