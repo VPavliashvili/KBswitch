@@ -9,22 +9,26 @@ import (
 	"kbswitch/internal/app/api"
 )
 
+// this is provided from build args
 var compileDate string
 
 func main() {
-    compTime, err := time.Parse(time.RFC3339, compileDate)
-    if err != nil {
-        panic("could not parse build time\n" + err.Error())
-    }
+	compTime, err := time.Parse(time.RFC3339, compileDate)
+	if err != nil {
+		panic("could not parse build time\n" + err.Error())
+	}
 
-    // this will be separated out to the config
+	// config part will be separated out to the config
 	app := app.Application{
 		Config: app.Config{
 			Port:         6012,
 			ReadTimeout:  5,
 			WriteTimeout: 5,
 		},
-        BuildDate: compTime,
+		BuildDate: compTime,
+		InjectedRepos: app.InjectedRepos{
+			SwitchesRepo: nil, // after writing real implementation gotta create the instance here
+		},
 	}
 
 	fmt.Printf("APPLICATION STARTED\n")

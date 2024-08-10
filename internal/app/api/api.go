@@ -6,6 +6,7 @@ import (
 
 	"kbswitch/docs"
 	"kbswitch/internal/app"
+	"kbswitch/internal/app/api/controllers/switches"
 	"kbswitch/internal/app/api/controllers/system"
 	"kbswitch/internal/app/api/middlewares"
 	"kbswitch/internal/app/api/router"
@@ -27,6 +28,14 @@ func InitRouter(app app.Application) *router.CustomMux {
 
 			ng.HandleRouteFunc("GET /about", func(w http.ResponseWriter, r *http.Request) {
 				c.HandleAbout(w, r)
+			})
+		})
+
+		this.AddGroup("/api/switches/", func(ng *router.Group) {
+			c := switches.New(app.InjectedRepos.SwitchesRepo)
+
+			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+				c.HandleSwitches(w, r)
 			})
 		})
 

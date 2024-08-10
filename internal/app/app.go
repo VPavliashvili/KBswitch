@@ -1,10 +1,18 @@
 package app
 
-import "time"
+import (
+	"kbswitch/internal/core/repositories"
+	"time"
+)
 
 type Application struct {
-	Config    Config
-	BuildDate time.Time
+	Config        Config
+	BuildDate     time.Time
+	InjectedRepos InjectedRepos
+}
+
+type InjectedRepos struct {
+	SwitchesRepo repositories.SwitchesRepo
 }
 
 type Config struct {
