@@ -30,10 +30,15 @@ func (w *fakeWriter) WriteHeader(statusCode int) {
 
 type fakeRepo struct {
 	pluralReturner func() ([]models.SwitchEntity, error)
+	singleReturner func(id int) (*models.SwitchEntity, error)
 }
 
 func (r fakeRepo) GetAll() ([]models.SwitchEntity, error) {
 	return r.pluralReturner()
+}
+
+func (r fakeRepo) GetByID(id int) (*models.SwitchEntity, error) {
+	return r.singleReturner(id)
 }
 
 func TestHandleSwitches(t *testing.T) {
@@ -90,7 +95,11 @@ func TestHandleSwitches(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data:         "tst",
+				data: models.APIError{
+					Status:  http.StatusInternalServerError,
+					Message: "tst",
+				}.Error(),
+
 				headerStatus: http.StatusInternalServerError,
 			},
 		},
@@ -121,7 +130,10 @@ func TestHandleSwitches(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data:         "collection got nil from a repo",
+				data: models.APIError{
+					Message: "collection got nil from a repo",
+					Status:  http.StatusInternalServerError,
+				}.Error(),
 				headerStatus: http.StatusInternalServerError,
 			},
 		},
@@ -135,6 +147,144 @@ func TestHandleSwitches(t *testing.T) {
 		}
 		if tc.expected.headerStatus != tc.w.headerStatus {
 			t.Errorf("HandleSwitches response header failed\nexpected %v\ngot  %v",
+				tc.expected.headerStatus, tc.w.headerStatus)
+		}
+	}
+}
+
+func TestHandleSwitchByID(t *testing.T) {
+	tcases := []struct {
+		repo     fakeRepo
+		w        *fakeWriter
+		req      *http.Request
+		expected struct {
+			data         string
+			headerStatus int
+		}
+	}{
+		{
+			repo: fakeRepo{},
+			w:    &fakeWriter{},
+			req:  &http.Request{},
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Message: "request parameter is missing",
+					Status:  http.StatusBadRequest,
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			repo: fakeRepo{},
+			w:    &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("id", "wrongtype")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusBadRequest,
+					Message: "request parameter should be int",
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			repo: fakeRepo{singleReturner: func(id int) (*models.SwitchEntity, error) {
+				return nil, nil
+			}},
+			w: &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("id", "123")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusNotFound,
+					Message: "no resource found for a given id",
+				}.Error(),
+				headerStatus: http.StatusNotFound,
+			},
+		},
+		{
+			repo: fakeRepo{singleReturner: func(id int) (*models.SwitchEntity, error) {
+				return nil, fmt.Errorf("tst")
+			}},
+			w: &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("id", "123")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusInternalServerError,
+					Message: "tst",
+				}.Error(),
+				headerStatus: http.StatusInternalServerError,
+			},
+		},
+		{
+			repo: fakeRepo{singleReturner: func(id int) (*models.SwitchEntity, error) {
+				return &models.SwitchEntity{
+					Lifespan:         100,
+					OperatingForce:   50,
+					ActivationTravel: 1.9,
+					TotalTravel:      4.5,
+				}, nil
+			}},
+			w: &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("id", "123")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: func() string {
+					dto := switches.SwitchDTO{
+						Lifespan:         "100M",
+						OperatingForce:   "50gf",
+						ActivationTravel: "1.9mm",
+						TotalTravel:      "4.5mm",
+					}
+					j, _ := json.Marshal(dto)
+
+					return string(j[:])
+				}(),
+				headerStatus: http.StatusOK,
+			},
+		},
+	}
+
+	for _, tc := range tcases {
+		handler := switches.New(tc.repo)
+		handler.HandleSwitchByID(tc.w, tc.req)
+		if tc.expected.data != tc.w.input {
+			t.Errorf("HandleSwitchByID failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
+		}
+		if tc.expected.headerStatus != tc.w.headerStatus {
+			t.Errorf("HandleSwitchByID response header failed\nexpected %v\ngot  %v",
 				tc.expected.headerStatus, tc.w.headerStatus)
 		}
 	}

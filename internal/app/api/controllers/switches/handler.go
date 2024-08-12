@@ -2,11 +2,11 @@ package switches
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"kbswitch/internal/core/models"
 	"kbswitch/internal/core/repositories"
 	"net/http"
+	"strconv"
 )
 
 type controller struct {
@@ -19,14 +19,14 @@ func New(repo repositories.SwitchesRepo) controller {
 	}
 }
 
-func writeErr(err error, status int, w http.ResponseWriter) {
+func writeErr(err string, status int, w http.ResponseWriter) {
 	e := models.APIError{
 		Status:  status,
-		Message: err.Error(),
+		Message: err,
 	}
 
-	w.WriteHeader(e.Status)
-	fmt.Fprint(w, err.Error())
+	w.WriteHeader(status)
+	fmt.Fprint(w, e)
 }
 
 // HandleSwitches godoc
@@ -41,12 +41,12 @@ func writeErr(err error, status int, w http.ResponseWriter) {
 func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 	resp, err := c.repo.GetAll()
 	if err != nil {
-		writeErr(err, http.StatusInternalServerError, w)
+		writeErr(err.Error(), http.StatusInternalServerError, w)
 		return
 	}
 	if resp == nil {
 		writeErr(
-			errors.New("collection got nil from a repo"),
+			"collection got nil from a repo",
 			http.StatusInternalServerError,
 			w,
 		)
@@ -55,7 +55,7 @@ func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 
 	dtos := make([]SwitchDTO, len(resp))
 	for i, item := range resp {
-		dtos[i] = asDTO(item)
+		dtos[i] = AsDTO(item)
 	}
 
 	json, _ := json.Marshal(dtos)
@@ -64,21 +64,43 @@ func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(json[:]))
 }
 
-// // ImageTest godoc
-// //
-// // @Summary idk
-// // @Tags switches
-// // @Produce image/png
-// func (c controller) ImageTest(w http.ResponseWriter, r *http.Request) {
-// 	var imageTemplate string = `<!DOCTYPE html>
-//     <html lang="en"><head></head>
-//     <body><img src="data:image/jpg;base64,{{.Image}}"></body>`
+// HandleSwitchByID godoc
 //
-//     buffer := new(bytes.Buffer )
-//     str := base64.StdEncoding.EncodeToString(buffer.Bytes())
-//
-// 	tmpl, _ := template.New("image").Parse(imageTemplate)
-//     data := map[string]any{"Image": str}
-//
-//     tmpl.Execute(w, data)
-// }
+//	@Summary		Get switch by ID
+//	@Description	Gives a single switch by database ID
+//	@Param			id	path		int	true	"Switch ID"
+//	@Tags			switches
+//	@Produce		json
+//	@Success		200	{object}	      SwitchDTO
+//	@Failure		500	{object}	models.APIError
+//	@Failure		400	{object}	models.APIError
+//	@Failure		404	{object}	models.APIError
+//	@Router			/api/switches/{id} [get]
+func (c controller) HandleSwitchByID(w http.ResponseWriter, r *http.Request) {
+	p := r.PathValue("id")
+	if p == "" {
+		writeErr("request parameter is missing", http.StatusBadRequest, w)
+		return
+	}
+	id, err := strconv.Atoi(p)
+	if err != nil {
+		writeErr("request parameter should be int", http.StatusBadRequest, w)
+		return
+	}
+
+	resp, err := c.repo.GetByID(id)
+	if err != nil {
+		writeErr(err.Error(), http.StatusInternalServerError, w)
+		return
+	}
+	if resp == nil {
+		writeErr("no resource found for a given id", http.StatusNotFound, w)
+		return
+	}
+
+	dto := AsDTO(*resp)
+	json, _ := json.Marshal(dto)
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "%s", string(json[:]))
+}

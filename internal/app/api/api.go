@@ -37,6 +37,10 @@ func InitRouter(app app.Application) *router.CustomMux {
 			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 				c.HandleSwitches(w, r)
 			})
+
+			ng.HandleRouteFunc("GET /{id}", func(w http.ResponseWriter, r *http.Request) {
+				c.HandleSwitchByID(w, r)
+			})
 		})
 
 		this.HandleFunc("GET /swagger/*", httpSwagger.Handler(
