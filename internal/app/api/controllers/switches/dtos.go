@@ -2,7 +2,7 @@ package switches
 
 import (
 	"fmt"
-	"kbswitch/internal/core/models"
+	"kbswitch/internal/core/switches/models"
 	"strconv"
 )
 
@@ -20,7 +20,7 @@ type SwitchDTO struct {
 	Profile          string `json:"profile"`
 }
 
-func AsDTO(entity models.SwitchEntity) SwitchDTO {
+func AsDTO(entity models.Switch) SwitchDTO {
 	lifespan := fmt.Sprintf("%dM", entity.Lifespan)
 	opforce := fmt.Sprintf("%dgf", entity.OperatingForce)
 	alltravel := strconv.FormatFloat(entity.TotalTravel, 'f', -1, 64) + "mm"

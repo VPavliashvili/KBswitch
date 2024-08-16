@@ -29,6 +29,9 @@ func main() {
 		InjectedRepos: app.InjectedRepos{
 			SwitchesRepo: nil, // after writing real implementation gotta create the instance here
 		},
+		InjectedServices: app.InjectedServices{
+			SwitchesService: nil, // after writing real implementation gotta create the instance here
+		},
 	}
 
 	fmt.Printf("APPLICATION STARTED\n")

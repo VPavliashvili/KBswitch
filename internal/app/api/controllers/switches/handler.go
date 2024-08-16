@@ -3,19 +3,19 @@ package switches
 import (
 	"encoding/json"
 	"fmt"
-	"kbswitch/internal/core/models"
-	"kbswitch/internal/core/repositories"
+	"kbswitch/internal/core/switches/models"
+	"kbswitch/internal/core/switches/services"
 	"net/http"
 	"strconv"
 )
 
 type controller struct {
-	repo repositories.SwitchesRepo
+	service services.SwitchesService
 }
 
-func New(repo repositories.SwitchesRepo) controller {
+func New(service services.SwitchesService) controller {
 	return controller{
-		repo: repo,
+		service: service,
 	}
 }
 
@@ -39,7 +39,7 @@ func writeErr(err string, status int, w http.ResponseWriter) {
 //	@Failure		500	{object}	models.APIError
 //	@Router			/api/switches [get]
 func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
-	resp, err := c.repo.GetAll()
+	resp, err := c.service.GetAll()
 	if err != nil {
 		writeErr(err.Error(), http.StatusInternalServerError, w)
 		return
@@ -88,7 +88,7 @@ func (c controller) HandleSwitchByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := c.repo.GetByID(id)
+	resp, err := c.service.GetByID(id)
 	if err != nil {
 		writeErr(err.Error(), http.StatusInternalServerError, w)
 		return
@@ -103,4 +103,38 @@ func (c controller) HandleSwitchByID(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "%s", string(json[:]))
+}
+
+// HandleSwitchAdd godoc
+//
+//	@Summary		Add new switch
+//	@Description	Add a new switch and get resource address
+//	@Tags			switches
+//	@Produce		json
+//	@Accept		    json
+//	@Param			newswitch	body   models.SwitchRequestBody   true    "Switch to add"
+//	@Success		200	{object}	      string
+//	@Failure		500	{object}	models.APIError
+//	@Failure		400	{object}	models.APIError
+//	@Router			/api/switches [post]
+func (c controller) HandleSwitchAdd(w http.ResponseWriter, r *http.Request) {
+	var req models.SwitchRequestBody
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&req)
+	if err != nil {
+		writeErr("invalid request model", http.StatusBadRequest, w)
+		return
+	}
+
+	id, err := c.service.AddNew(req)
+	if err != nil {
+		writeErr(err.Error(), http.StatusInternalServerError, w)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "%s%s/%d", r.Host, r.URL.Path, *id)
+
 }

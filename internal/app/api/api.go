@@ -32,7 +32,7 @@ func InitRouter(app app.Application) *router.CustomMux {
 		})
 
 		this.AddGroup("/api/switches/", func(ng *router.Group) {
-			c := switches.New(app.InjectedRepos.SwitchesRepo)
+			c := switches.New(app.InjectedServices.SwitchesService)
 
 			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 				c.HandleSwitches(w, r)
@@ -40,6 +40,10 @@ func InitRouter(app app.Application) *router.CustomMux {
 
 			ng.HandleRouteFunc("GET /{id}", func(w http.ResponseWriter, r *http.Request) {
 				c.HandleSwitchByID(w, r)
+			})
+
+			ng.HandleRouteFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
+				c.HandleSwitchAdd(w, r)
 			})
 		})
 
