@@ -34,9 +34,14 @@ func (w *fakeWriter) WriteHeader(statusCode int) {
 }
 
 type fakeService struct {
-	pluralReturner  func() ([]models.Switch, error)
-	singleReturner  func(id int) (*models.Switch, error)
-	addSwitchAction func(reqbody models.SwitchRequestBody) (*int, error)
+	pluralReturner     func() ([]models.Switch, error)
+	singleReturner     func(id int) (*models.Switch, error)
+	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
+	deleteSwitchAction func(string, string) error
+}
+
+func (f fakeService) Remove(brand, name string) error {
+	return f.deleteSwitchAction(brand, name)
 }
 
 func (f fakeService) AddNew(s models.SwitchRequestBody) (*int, error) {
@@ -54,7 +59,7 @@ func (f fakeService) GetByID(id int) (*models.Switch, error) {
 func TestHandleSwitches(t *testing.T) {
 	tcases := []struct {
 		w        *fakeWriter
-		repo     *fakeService
+		service  *fakeService
 		expected struct {
 			data         string
 			headerStatus int
@@ -62,7 +67,7 @@ func TestHandleSwitches(t *testing.T) {
 	}{
 		{
 			w: &fakeWriter{},
-			repo: &fakeService{
+			service: &fakeService{
 				pluralReturner: func() ([]models.Switch, error) {
 					return []models.Switch{
 						{
@@ -96,7 +101,7 @@ func TestHandleSwitches(t *testing.T) {
 		},
 		{
 			w: &fakeWriter{},
-			repo: &fakeService{
+			service: &fakeService{
 				pluralReturner: func() ([]models.Switch, error) {
 					return nil, fmt.Errorf("tst")
 				},
@@ -115,7 +120,7 @@ func TestHandleSwitches(t *testing.T) {
 		},
 		{
 			w: &fakeWriter{},
-			repo: &fakeService{
+			service: &fakeService{
 				pluralReturner: func() ([]models.Switch, error) {
 					sws := make([]models.Switch, 0)
 					return sws, nil
@@ -131,7 +136,7 @@ func TestHandleSwitches(t *testing.T) {
 		},
 		{
 			w: &fakeWriter{},
-			repo: &fakeService{
+			service: &fakeService{
 				pluralReturner: func() ([]models.Switch, error) {
 					return nil, nil
 				},
@@ -141,7 +146,7 @@ func TestHandleSwitches(t *testing.T) {
 				headerStatus int
 			}{
 				data: models.APIError{
-					Message: "collection got nil from a repo",
+					Message: "collection got nil from a service",
 					Status:  http.StatusInternalServerError,
 				}.Error(),
 				headerStatus: http.StatusInternalServerError,
@@ -150,7 +155,7 @@ func TestHandleSwitches(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		handler := switches.New(tc.repo)
+		handler := switches.New(tc.service)
 		handler.HandleSwitches(tc.w, nil)
 		if tc.expected.data != tc.w.input {
 			t.Errorf("HandleSwitches failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
@@ -164,7 +169,7 @@ func TestHandleSwitches(t *testing.T) {
 
 func TestHandleSwitchByID(t *testing.T) {
 	tcases := []struct {
-		repo     fakeService
+		service  fakeService
 		w        *fakeWriter
 		req      *http.Request
 		expected struct {
@@ -173,9 +178,9 @@ func TestHandleSwitchByID(t *testing.T) {
 		}
 	}{
 		{
-			repo: fakeService{},
-			w:    &fakeWriter{},
-			req:  &http.Request{},
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req:     &http.Request{},
 			expected: struct {
 				data         string
 				headerStatus int
@@ -188,8 +193,8 @@ func TestHandleSwitchByID(t *testing.T) {
 			},
 		},
 		{
-			repo: fakeService{},
-			w:    &fakeWriter{},
+			service: fakeService{},
+			w:       &fakeWriter{},
 			req: func() *http.Request {
 				rq := &http.Request{}
 				rq.SetPathValue("id", "wrongtype")
@@ -208,7 +213,7 @@ func TestHandleSwitchByID(t *testing.T) {
 			},
 		},
 		{
-			repo: fakeService{singleReturner: func(id int) (*models.Switch, error) {
+			service: fakeService{singleReturner: func(id int) (*models.Switch, error) {
 				return nil, nil
 			}},
 			w: &fakeWriter{},
@@ -230,7 +235,7 @@ func TestHandleSwitchByID(t *testing.T) {
 			},
 		},
 		{
-			repo: fakeService{singleReturner: func(id int) (*models.Switch, error) {
+			service: fakeService{singleReturner: func(id int) (*models.Switch, error) {
 				return nil, fmt.Errorf("tst")
 			}},
 			w: &fakeWriter{},
@@ -252,7 +257,7 @@ func TestHandleSwitchByID(t *testing.T) {
 			},
 		},
 		{
-			repo: fakeService{singleReturner: func(id int) (*models.Switch, error) {
+			service: fakeService{singleReturner: func(id int) (*models.Switch, error) {
 				return &models.Switch{
 					Lifespan:         100,
 					OperatingForce:   50,
@@ -288,7 +293,7 @@ func TestHandleSwitchByID(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		handler := switches.New(tc.repo)
+		handler := switches.New(tc.service)
 		handler.HandleSwitchByID(tc.w, tc.req)
 		if tc.expected.data != tc.w.input {
 			t.Errorf("HandleSwitchByID failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
@@ -300,7 +305,90 @@ func TestHandleSwitchByID(t *testing.T) {
 	}
 }
 
-func TestHandleSwitchPatch(t *testing.T) {
+func TestHandleSwitchRemove(t *testing.T) {
+	tcases := []struct {
+		service  fakeService
+		w        *fakeWriter
+		req      *http.Request
+		expected struct {
+			data         string
+			headerStatus int
+		}
+	}{
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req:     &http.Request{},
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Message: "request parameter 'name' and 'brand' are missing",
+					Status:  http.StatusBadRequest,
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{deleteSwitchAction: func(brand, name string) error {
+				return fmt.Errorf("tst")
+			}},
+			w: &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brand", "tstbrand")
+				rq.SetPathValue("name", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusNotFound,
+					Message: "tst",
+				}.Error(),
+				headerStatus: http.StatusNotFound,
+			},
+		},
+		{
+			service: fakeService{deleteSwitchAction: func(s1, s2 string) error {
+				return nil
+			}},
+			w: &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brand", "tstbrand")
+				rq.SetPathValue("name", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data:         "",
+				headerStatus: http.StatusNoContent,
+			},
+		},
+	}
+
+	for _, tc := range tcases {
+		handler := switches.New(tc.service)
+		handler.HandleSwitchRemove(tc.w, tc.req)
+		if tc.expected.data != tc.w.input {
+			t.Errorf("HandleSwitchRemove failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
+		}
+		if tc.expected.headerStatus != tc.w.headerStatus {
+			t.Errorf("HandleSwitchRemove response header failed\nexpected %v\ngot  %v",
+				tc.expected.headerStatus, tc.w.headerStatus)
+		}
+	}
+}
+
+func TestHandleSwitchAdd(t *testing.T) {
 	tcases := []struct {
 		service  fakeService
 		w        *fakeWriter
@@ -387,8 +475,8 @@ func TestHandleSwitchPatch(t *testing.T) {
 				j, _ := json.Marshal(s)
 				msg := string(j[:])
 				rq, _ := http.NewRequest("POST", "", strings.NewReader(msg))
-                rq.Host = "tsthost:tstport/"
-                rq.URL.Path = "api/switches"
+				rq.Host = "tsthost:tstport/"
+				rq.URL.Path = "api/switches"
 
 				return rq
 			}(),
@@ -397,7 +485,7 @@ func TestHandleSwitchPatch(t *testing.T) {
 				headerStatus int
 			}{
 				data: func() string {
-                    return "tsthost:tstport/api/switches/123"
+					return "tsthost:tstport/api/switches/123"
 				}(),
 				headerStatus: http.StatusCreated,
 			},

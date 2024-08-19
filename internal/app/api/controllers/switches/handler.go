@@ -35,7 +35,7 @@ func writeErr(err string, status int, w http.ResponseWriter) {
 //	@Description	Gives array of all keyboard switches
 //	@Tags			switches
 //	@Produce		json
-//	@Success		200	{array}	    SwitchDTO
+//	@Success		200	{array}		SwitchDTO
 //	@Failure		500	{object}	models.APIError
 //	@Router			/api/switches [get]
 func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 	}
 	if resp == nil {
 		writeErr(
-			"collection got nil from a repo",
+			"collection got nil from a service",
 			http.StatusInternalServerError,
 			w,
 		)
@@ -68,10 +68,10 @@ func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 //
 //	@Summary		Get switch by ID
 //	@Description	Gives a single switch by database ID
-//	@Param			id	path		int	true	"Switch ID"
+//	@Param			id	path	int	true	"Switch ID"
 //	@Tags			switches
 //	@Produce		json
-//	@Success		200	{object}	      SwitchDTO
+//	@Success		200	{object}	SwitchDTO
 //	@Failure		500	{object}	models.APIError
 //	@Failure		400	{object}	models.APIError
 //	@Failure		404	{object}	models.APIError
@@ -105,17 +105,49 @@ func (c controller) HandleSwitchByID(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(json[:]))
 }
 
+// RemoveSwitch godoc
+//
+//	@Summary		Remove switch by its name and brand
+//	@Description	removes switch
+//	@Tags			switches
+//	@Accept			json
+//	@Produce		json
+//	@Param			brand	path	int	true	"brand of the switch to delete"
+//	@Param			name	path	int	true	"name of the switch to delete"
+//	@Success		204
+//	@Failure		500	{object}	models.APIError
+//	@Failure		400	{object}	models.APIError
+//	@Failure		404	{object}	models.APIError
+//	@Router			/api/switches/{brand}/{name} [delete]
+func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
+	brand := r.PathValue("brand")
+	name := r.PathValue("name")
+	if brand == "" || name == "" {
+		writeErr("request parameter 'name' and 'brand' are missing", http.StatusBadRequest, w)
+		return
+	}
+
+	err := c.service.Remove(brand, name)
+	if err != nil {
+		writeErr(err.Error(), http.StatusNotFound, w)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	fmt.Fprintf(w, "")
+}
+
 // HandleSwitchAdd godoc
 //
 //	@Summary		Add new switch
 //	@Description	Add a new switch and get resource address
 //	@Tags			switches
 //	@Produce		json
-//	@Accept		    json
-//	@Param			newswitch	body   models.SwitchRequestBody   true    "Switch to add"
-//	@Success		200	{object}	      string
-//	@Failure		500	{object}	models.APIError
-//	@Failure		400	{object}	models.APIError
+//	@Accept			json
+//	@Param			newswitch	body		models.SwitchRequestBody	true	"Switch to add"
+//	@Success		200			{object}	string
+//	@Failure		500			{object}	models.APIError
+//	@Failure		400			{object}	models.APIError
 //	@Router			/api/switches [post]
 func (c controller) HandleSwitchAdd(w http.ResponseWriter, r *http.Request) {
 	var req models.SwitchRequestBody
