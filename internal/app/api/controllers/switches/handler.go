@@ -123,7 +123,13 @@ func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
 	brand := r.PathValue("brand")
 	name := r.PathValue("name")
 	if brand == "" || name == "" {
-		writeErr("request parameter 'name' and 'brand' are missing", http.StatusBadRequest, w)
+		msg := "request parameters 'name' and 'brand' are missing"
+		if brand != "" {
+			msg = "request parameter 'name' is missing"
+		} else if name != "" {
+			msg = "request parameter 'brand' is missing"
+		}
+		writeErr(msg, http.StatusBadRequest, w)
 		return
 	}
 
@@ -135,6 +141,66 @@ func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 	fmt.Fprintf(w, "")
+}
+
+// HandleSwitchUpdate godoc
+//
+//	@Summary		Modify/Update existing switch
+//	@Description	Update a switch and get modified resource
+//	@Tags			switches
+//	@Produce		json
+//	@Accept			json
+//	@Param			brand	path		int	true	"brand of the switch to update"
+//	@Param			name	path		int	true	"name of the switch to update"
+//	@Success		200		{object}	SwitchDTO
+//	@Failure		500		{object}	models.APIError
+//	@Failure		400		{object}	models.APIError
+//	@Router			/api/switches/{brand}/{name} [patch]
+func (c controller) HandleSwitchUpdate(w http.ResponseWriter, r *http.Request) {
+	brand := r.PathValue("brand")
+	name := r.PathValue("name")
+	if brand == "" && name == "" {
+		msg := "request parameters 'name' and 'brand' are missing"
+		writeErr(msg, http.StatusBadRequest, w)
+		return
+	}
+	if brand == "" {
+		msg := "request parameter 'brand' is missing"
+		writeErr(msg, http.StatusBadRequest, w)
+		return
+	}
+	if name == "" {
+		msg := "request parameter 'name' is missing"
+		writeErr(msg, http.StatusBadRequest, w)
+		return
+	}
+
+	var req models.SwitchRequestBody
+	if r.Body != nil {
+
+		decoder := json.NewDecoder(r.Body)
+		defer r.Body.Close()
+		decoder.DisallowUnknownFields()
+		err := decoder.Decode(&req)
+		if err != nil {
+			writeErr("invalid request model", http.StatusBadRequest, w)
+			return
+		}
+	} else {
+		writeErr("request body is entirely missing/nil", http.StatusBadRequest, w)
+		return
+	}
+
+	resp, err := c.service.Update(req)
+	if err != nil {
+		writeErr(err.Error(), http.StatusInternalServerError, w)
+		return
+	}
+	j, _ := json.Marshal(AsDTO(*resp))
+	result := string(j[:])
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, result)
 }
 
 // HandleSwitchAdd godoc

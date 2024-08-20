@@ -38,6 +38,11 @@ type fakeService struct {
 	singleReturner     func(id int) (*models.Switch, error)
 	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
 	deleteSwitchAction func(string, string) error
+	updateSwitchAction func(models.SwitchRequestBody) (*models.Switch, error)
+}
+
+func (f fakeService) Update(m models.SwitchRequestBody) (*models.Switch, error) {
+	return f.updateSwitchAction(m)
 }
 
 func (f fakeService) Remove(brand, name string) error {
@@ -56,10 +61,221 @@ func (f fakeService) GetByID(id int) (*models.Switch, error) {
 	return f.singleReturner(id)
 }
 
+func TestHandleSwitchUpdate(t *testing.T) {
+	tcases := []struct {
+		service  fakeService
+		w        *fakeWriter
+		req      *http.Request
+		expected struct {
+			data         string
+			headerStatus int
+		}
+	}{
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req: func() *http.Request {
+				msg := `{"tst":"wrong"}`
+				rq, _ := http.NewRequest("PATCH", "", strings.NewReader(msg))
+
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("name", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusBadRequest,
+					Message: "invalid request model",
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			w: &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("name", "tstname")
+
+				return rq
+			}(),
+			service: fakeService{},
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusBadRequest,
+					Message: "request body is entirely missing/nil",
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brandnotset", "tst")
+				rq.SetPathValue("namenotset", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Message: "request parameters 'name' and 'brand' are missing",
+					Status:  http.StatusBadRequest,
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("namenotset", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusBadRequest,
+					Message: "request parameter 'name' is missing",
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brandnotset", "tst")
+				rq.SetPathValue("name", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusBadRequest,
+					Message: "request parameter 'brand' is missing",
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brandnotset", "tst")
+				rq.SetPathValue("name", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusBadRequest,
+					Message: "request parameter 'brand' is missing",
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{updateSwitchAction: func(srb models.SwitchRequestBody) (*models.Switch, error) {
+				return nil, fmt.Errorf("tst")
+			}},
+			w: &fakeWriter{},
+			req: func() *http.Request {
+				s := models.SwitchRequestBody{}
+				j, _ := json.Marshal(s)
+				rq, _ := http.NewRequest("PATCH", "", strings.NewReader(string(j[:])))
+
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("name", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusInternalServerError,
+					Message: "tst",
+				}.Error(),
+				headerStatus: http.StatusInternalServerError,
+			},
+		},
+		{
+			service: fakeService{updateSwitchAction: func(srb models.SwitchRequestBody) (*models.Switch, error) {
+				return &models.Switch{Name: "test"}, nil
+			}},
+			w: &fakeWriter{},
+			req: func() *http.Request {
+				s := models.SwitchRequestBody{Name: "test"}
+				j, _ := json.Marshal(s)
+				rq, _ := http.NewRequest("PATCH", "", strings.NewReader(string(j[:])))
+
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("name", "oldname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: func() string {
+					resp := models.Switch{
+						Name: "test",
+					}
+					dto := switches.AsDTO(resp)
+					j, _ := json.Marshal(dto)
+
+					return string(j[:])
+				}(),
+				headerStatus: http.StatusOK,
+			},
+		},
+	}
+
+	for _, tc := range tcases {
+		handler := switches.New(tc.service)
+		handler.HandleSwitchUpdate(tc.w, tc.req)
+		if tc.expected.data != tc.w.input {
+			t.Errorf("HandleSwitchUpdate failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
+		}
+		if tc.expected.headerStatus != tc.w.headerStatus {
+			t.Errorf("HandleSwitchUpdate response header failed\nexpected %v\ngot  %v",
+				tc.expected.headerStatus, tc.w.headerStatus)
+		}
+	}
+}
+
 func TestHandleSwitches(t *testing.T) {
 	tcases := []struct {
 		w        *fakeWriter
-		service  *fakeService
+		service  fakeService
 		expected struct {
 			data         string
 			headerStatus int
@@ -67,7 +283,7 @@ func TestHandleSwitches(t *testing.T) {
 	}{
 		{
 			w: &fakeWriter{},
-			service: &fakeService{
+			service: fakeService{
 				pluralReturner: func() ([]models.Switch, error) {
 					return []models.Switch{
 						{
@@ -101,7 +317,7 @@ func TestHandleSwitches(t *testing.T) {
 		},
 		{
 			w: &fakeWriter{},
-			service: &fakeService{
+			service: fakeService{
 				pluralReturner: func() ([]models.Switch, error) {
 					return nil, fmt.Errorf("tst")
 				},
@@ -120,7 +336,7 @@ func TestHandleSwitches(t *testing.T) {
 		},
 		{
 			w: &fakeWriter{},
-			service: &fakeService{
+			service: fakeService{
 				pluralReturner: func() ([]models.Switch, error) {
 					sws := make([]models.Switch, 0)
 					return sws, nil
@@ -136,7 +352,7 @@ func TestHandleSwitches(t *testing.T) {
 		},
 		{
 			w: &fakeWriter{},
-			service: &fakeService{
+			service: fakeService{
 				pluralReturner: func() ([]models.Switch, error) {
 					return nil, nil
 				},
@@ -324,8 +540,50 @@ func TestHandleSwitchRemove(t *testing.T) {
 				headerStatus int
 			}{
 				data: models.APIError{
-					Message: "request parameter 'name' and 'brand' are missing",
+					Message: "request parameters 'name' and 'brand' are missing",
 					Status:  http.StatusBadRequest,
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("namenotset", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusBadRequest,
+					Message: "request parameter 'name' is missing",
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brandnotset", "tst")
+				rq.SetPathValue("name", "tstname")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Status:  http.StatusBadRequest,
+					Message: "request parameter 'brand' is missing",
 				}.Error(),
 				headerStatus: http.StatusBadRequest,
 			},

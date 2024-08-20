@@ -49,6 +49,10 @@ func InitRouter(app app.Application) *router.CustomMux {
 			ng.HandleRouteFunc("DELETE /{brand}/{name}", func(w http.ResponseWriter, r *http.Request) {
 				c.HandleSwitchRemove(w, r)
 			})
+
+			ng.HandleRouteFunc("PATCH /{brand}/{name}", func(w http.ResponseWriter, r *http.Request) {
+				c.HandleSwitchUpdate(w, r)
+			})
 		})
 
 		this.HandleFunc("GET /swagger/*", httpSwagger.Handler(
