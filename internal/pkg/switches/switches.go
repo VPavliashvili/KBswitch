@@ -1,6 +1,7 @@
 package switches
 
 import (
+	"fmt"
 	"kbswitch/internal/core/switches/models"
 	"kbswitch/internal/core/switches/repositories"
 )
@@ -37,4 +38,23 @@ func (s service) GetAll() ([]models.Switch, error) {
 	}
 
 	return res, err
+}
+
+func (s service) GetSingle(brand, name string) (*models.Switch, error) {
+	exists, err := s.repo.Exists(brand, name)
+
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("given combination of brand and name not found")
+	}
+
+	resp, err := s.repo.GetSingle(brand, name)
+	if resp == nil {
+		return nil, err
+	}
+	res := models.Switch(*resp)
+
+	return &res, err
 }
