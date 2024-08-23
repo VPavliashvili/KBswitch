@@ -35,7 +35,7 @@ func (w *fakeWriter) WriteHeader(statusCode int) {
 
 type fakeService struct {
 	pluralReturner     func() ([]models.Switch, error)
-	singleReturner     func(id int) (*models.Switch, error)
+	singleReturner     func(string, string) (*models.Switch, error)
 	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
 	deleteSwitchAction func(string, string) error
 	updateSwitchAction func(models.SwitchRequestBody) (*models.Switch, error)
@@ -57,8 +57,8 @@ func (f fakeService) GetAll() ([]models.Switch, error) {
 	return f.pluralReturner()
 }
 
-func (f fakeService) GetByID(id int) (*models.Switch, error) {
-	return f.singleReturner(id)
+func (f fakeService) GetSingle(brand, name string) (*models.Switch, error) {
+	return f.singleReturner(brand, name)
 }
 
 func TestHandleSwitchUpdate(t *testing.T) {
@@ -383,7 +383,7 @@ func TestHandleSwitches(t *testing.T) {
 	}
 }
 
-func TestHandleSwitchByID(t *testing.T) {
+func TestHandleSingleSwitch(t *testing.T) {
 	tcases := []struct {
 		service  fakeService
 		w        *fakeWriter
@@ -402,7 +402,7 @@ func TestHandleSwitchByID(t *testing.T) {
 				headerStatus int
 			}{
 				data: models.APIError{
-					Message: "request parameter is missing",
+					Message: "request parameters 'name' and 'brand' are missing",
 					Status:  http.StatusBadRequest,
 				}.Error(),
 				headerStatus: http.StatusBadRequest,
@@ -413,7 +413,27 @@ func TestHandleSwitchByID(t *testing.T) {
 			w:       &fakeWriter{},
 			req: func() *http.Request {
 				rq := &http.Request{}
-				rq.SetPathValue("id", "wrongtype")
+				rq.SetPathValue("name", "tst")
+
+				return rq
+			}(),
+			expected: struct {
+				data         string
+				headerStatus int
+			}{
+				data: models.APIError{
+					Message: "request parameter 'brand' is missing",
+					Status:  http.StatusBadRequest,
+				}.Error(),
+				headerStatus: http.StatusBadRequest,
+			},
+		},
+		{
+			service: fakeService{},
+			w:       &fakeWriter{},
+			req: func() *http.Request {
+				rq := &http.Request{}
+				rq.SetPathValue("brand", "tst")
 
 				return rq
 			}(),
@@ -423,19 +443,20 @@ func TestHandleSwitchByID(t *testing.T) {
 			}{
 				data: models.APIError{
 					Status:  http.StatusBadRequest,
-					Message: "request parameter should be int",
+					Message: "request parameter 'name' is missing",
 				}.Error(),
 				headerStatus: http.StatusBadRequest,
 			},
 		},
 		{
-			service: fakeService{singleReturner: func(id int) (*models.Switch, error) {
+			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, error) {
 				return nil, nil
 			}},
 			w: &fakeWriter{},
 			req: func() *http.Request {
 				rq := &http.Request{}
-				rq.SetPathValue("id", "123")
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("name", "tst")
 
 				return rq
 			}(),
@@ -445,19 +466,20 @@ func TestHandleSwitchByID(t *testing.T) {
 			}{
 				data: models.APIError{
 					Status:  http.StatusNotFound,
-					Message: "no resource found for a given id",
+					Message: "no resource found for a given name and brand",
 				}.Error(),
 				headerStatus: http.StatusNotFound,
 			},
 		},
 		{
-			service: fakeService{singleReturner: func(id int) (*models.Switch, error) {
+			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, error) {
 				return nil, fmt.Errorf("tst")
 			}},
 			w: &fakeWriter{},
 			req: func() *http.Request {
 				rq := &http.Request{}
-				rq.SetPathValue("id", "123")
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("name", "tst")
 
 				return rq
 			}(),
@@ -473,7 +495,7 @@ func TestHandleSwitchByID(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{singleReturner: func(id int) (*models.Switch, error) {
+			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, error) {
 				return &models.Switch{
 					Lifespan:         100,
 					OperatingForce:   50,
@@ -484,7 +506,8 @@ func TestHandleSwitchByID(t *testing.T) {
 			w: &fakeWriter{},
 			req: func() *http.Request {
 				rq := &http.Request{}
-				rq.SetPathValue("id", "123")
+				rq.SetPathValue("brand", "tst")
+				rq.SetPathValue("name", "tst")
 
 				return rq
 			}(),
@@ -510,12 +533,12 @@ func TestHandleSwitchByID(t *testing.T) {
 
 	for _, tc := range tcases {
 		handler := switches.New(tc.service)
-		handler.HandleSwitchByID(tc.w, tc.req)
+		handler.HandleSingleSwitch(tc.w, tc.req)
 		if tc.expected.data != tc.w.input {
-			t.Errorf("HandleSwitchByID failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
+			t.Errorf("HandleSingleSwitch failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
 		}
 		if tc.expected.headerStatus != tc.w.headerStatus {
-			t.Errorf("HandleSwitchByID response header failed\nexpected %v\ngot  %v",
+			t.Errorf("HandleSingleSwitch response header failed\nexpected %v\ngot  %v",
 				tc.expected.headerStatus, tc.w.headerStatus)
 		}
 	}

@@ -6,7 +6,6 @@ import (
 	"kbswitch/internal/core/switches/models"
 	"kbswitch/internal/core/switches/services"
 	"net/http"
-	"strconv"
 )
 
 type controller struct {
@@ -64,7 +63,7 @@ func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(json[:]))
 }
 
-// HandleSwitchByID godoc
+// HandleSingleSwitch godoc
 //
 //	@Summary		Get switch by ID
 //	@Description	Gives a single switch by database ID
@@ -75,26 +74,33 @@ func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	{object}	models.APIError
 //	@Failure		400	{object}	models.APIError
 //	@Failure		404	{object}	models.APIError
-//	@Router			/api/switches/{id} [get]
-func (c controller) HandleSwitchByID(w http.ResponseWriter, r *http.Request) {
-	p := r.PathValue("id")
-	if p == "" {
-		writeErr("request parameter is missing", http.StatusBadRequest, w)
+//	@Router			/api/switches/{brand}/{name} [get]
+func (c controller) HandleSingleSwitch(w http.ResponseWriter, r *http.Request) {
+	brand := r.PathValue("brand")
+	name := r.PathValue("name")
+	if brand == "" && name == "" {
+		msg := "request parameters 'name' and 'brand' are missing"
+		writeErr(msg, http.StatusBadRequest, w)
 		return
 	}
-	id, err := strconv.Atoi(p)
-	if err != nil {
-		writeErr("request parameter should be int", http.StatusBadRequest, w)
+	if brand == "" {
+		msg := "request parameter 'brand' is missing"
+		writeErr(msg, http.StatusBadRequest, w)
+		return
+	}
+	if name == "" {
+		msg := "request parameter 'name' is missing"
+		writeErr(msg, http.StatusBadRequest, w)
 		return
 	}
 
-	resp, err := c.service.GetByID(id)
+	resp, err := c.service.GetSingle(brand, name)
 	if err != nil {
 		writeErr(err.Error(), http.StatusInternalServerError, w)
 		return
 	}
 	if resp == nil {
-		writeErr("no resource found for a given id", http.StatusNotFound, w)
+		writeErr("no resource found for a given name and brand", http.StatusNotFound, w)
 		return
 	}
 
