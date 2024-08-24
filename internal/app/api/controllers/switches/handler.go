@@ -197,7 +197,7 @@ func (c controller) HandleSwitchUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := c.service.Update(req)
+	resp, err := c.service.Update(brand, name, req)
 	if err != nil {
 		writeErr(err.Error(), http.StatusInternalServerError, w)
 		return

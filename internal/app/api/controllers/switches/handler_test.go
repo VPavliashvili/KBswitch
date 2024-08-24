@@ -38,11 +38,11 @@ type fakeService struct {
 	singleReturner     func(string, string) (*models.Switch, error)
 	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
 	deleteSwitchAction func(string, string) error
-	updateSwitchAction func(models.SwitchRequestBody) (*models.Switch, error)
+	updateSwitchAction func(string, string, models.SwitchRequestBody) (*models.Switch, error)
 }
 
-func (f fakeService) Update(m models.SwitchRequestBody) (*models.Switch, error) {
-	return f.updateSwitchAction(m)
+func (f fakeService) Update(brand, name string, m models.SwitchRequestBody) (*models.Switch, error) {
+	return f.updateSwitchAction(brand, name, m)
 }
 
 func (f fakeService) Remove(brand, name string) error {
@@ -201,7 +201,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{updateSwitchAction: func(srb models.SwitchRequestBody) (*models.Switch, error) {
+			service: fakeService{updateSwitchAction: func(string, string, models.SwitchRequestBody) (*models.Switch, error) {
 				return nil, fmt.Errorf("tst")
 			}},
 			w: &fakeWriter{},
@@ -227,7 +227,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{updateSwitchAction: func(srb models.SwitchRequestBody) (*models.Switch, error) {
+			service: fakeService{updateSwitchAction: func(string, string, models.SwitchRequestBody) (*models.Switch, error) {
 				return &models.Switch{Name: "test"}, nil
 			}},
 			w: &fakeWriter{},

@@ -8,4 +8,5 @@ type SwitchesRepo interface {
 	GetSingle(int) (*models.SwitchEntity, error)
 	AddNew(models.SwitchEntity) (*int, error)
 	Remove(int) error
+	Update(int, models.SwitchEntity) (*models.SwitchEntity, error)
 }

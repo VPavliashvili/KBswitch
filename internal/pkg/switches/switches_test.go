@@ -18,6 +18,12 @@ type fakeRepo struct {
 	getSingleReturner func(int) (*models.SwitchEntity, error)
 	addNewAction      func(models.SwitchEntity) (*int, error)
 	removeAction      func(int) error
+	updateAction      func(int, models.SwitchEntity) (*models.SwitchEntity, error)
+}
+
+// Update implements repositories.SwitchesRepo.
+func (f fakeRepo) Update(id int, req models.SwitchEntity) (*models.SwitchEntity, error) {
+	return f.updateAction(id, req)
 }
 
 // Remove implements repositories.SwitchesRepo.
@@ -60,7 +66,7 @@ func TestRemove(t *testing.T) {
 			},
 			brand:    "test",
 			name:     "test",
-			expected: fmt.Errorf("resource with given ID not found"),
+			expected: fmt.Errorf("resource with given brand and name not found"),
 		},
 		{
 			repo: fakeRepo{
@@ -115,7 +121,208 @@ func TestRemove(t *testing.T) {
 		err := unit.Remove(tc.brand, tc.name)
 
 		if !reflect.DeepEqual(tc.expected, err) {
-			t.Errorf("AddNew error check failed\nexpected %v\ngot %v", tc.expected, err)
+			t.Errorf("Remove error check failed\nexpected %v\ngot %v", tc.expected, err)
+		}
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	tcases := []struct {
+		repo fakeRepo
+		in   struct {
+			brand string
+			name  string
+			body  models.SwitchRequestBody
+		}
+		expected struct {
+			res *models.Switch
+			err error
+		}
+	}{
+		{
+			repo: fakeRepo{
+				getID: func(string, string) (*int, error) {
+					return nil, nil
+				},
+			},
+			in: struct {
+				brand string
+				name  string
+				body  models.SwitchRequestBody
+			}{
+				brand: "test",
+				name:  "test",
+				body:  models.SwitchRequestBody{Brand: "newb", Name: "newn"},
+			},
+			expected: struct {
+				res *models.Switch
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("resource with given brand and name not found"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				getID: func(string, string) (*int, error) {
+					return nil, fmt.Errorf("test")
+				},
+			},
+			in: struct {
+				brand string
+				name  string
+				body  models.SwitchRequestBody
+			}{
+				brand: "test",
+				name:  "test",
+				body:  models.SwitchRequestBody{Brand: "newb", Name: "newn"},
+			},
+			expected: struct {
+				res *models.Switch
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("test"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				getID: func(string, string) (*int, error) {
+					return intptr(123), fmt.Errorf("test")
+				},
+			},
+			in: struct {
+				brand string
+				name  string
+				body  models.SwitchRequestBody
+			}{
+				brand: "test",
+				name:  "test",
+				body:  models.SwitchRequestBody{Brand: "newb", Name: "newn"},
+			},
+			expected: struct {
+				res *models.Switch
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("test"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				getID: func(string, string) (*int, error) {
+					return intptr(123), nil
+				},
+				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
+					return nil, nil
+				},
+			},
+			in: struct {
+				brand string
+				name  string
+				body  models.SwitchRequestBody
+			}{
+				brand: "test",
+				name:  "test",
+				body:  models.SwitchRequestBody{Brand: "newb", Name: "newn"},
+			},
+			expected: struct {
+				res *models.Switch
+				err error
+			}{
+				res: nil,
+				err: nil,
+			},
+		},
+		{
+			repo: fakeRepo{
+				getID: func(string, string) (*int, error) {
+					return intptr(123), nil
+				},
+				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
+					return nil, fmt.Errorf("test")
+				},
+			},
+			in: struct {
+				brand string
+				name  string
+				body  models.SwitchRequestBody
+			}{
+				brand: "test",
+				name:  "test",
+				body:  models.SwitchRequestBody{Brand: "newb", Name: "newn"},
+			},
+			expected: struct {
+				res *models.Switch
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("test"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				getID: func(string, string) (*int, error) {
+					return intptr(123), nil
+				},
+				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
+					return &models.SwitchEntity{Name: "tst"}, fmt.Errorf("test")
+				},
+			},
+			in: struct {
+				brand string
+				name  string
+				body  models.SwitchRequestBody
+			}{
+				brand: "test",
+				name:  "test",
+				body:  models.SwitchRequestBody{Brand: "newb", Name: "newn"},
+			},
+			expected: struct {
+				res *models.Switch
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("test"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				getID: func(string, string) (*int, error) {
+					return intptr(123), nil
+				},
+				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
+					return &models.SwitchEntity{Name: "tst"}, nil
+				},
+			},
+			in: struct {
+				brand string
+				name  string
+				body  models.SwitchRequestBody
+			}{
+				brand: "test",
+				name:  "test",
+				body:  models.SwitchRequestBody{Brand: "newb", Name: "newn"},
+			},
+			expected: struct {
+				res *models.Switch
+				err error
+			}{
+				res: &models.Switch{Name: "tst"},
+				err: nil,
+			},
+		},
+	}
+
+	for _, tc := range tcases {
+		unit := switches.New(tc.repo)
+		res, err := unit.Update(tc.in.brand, tc.in.name, tc.in.body)
+
+		if !reflect.DeepEqual(tc.expected.err, err) {
+			t.Errorf("Update error check failed\nexpected %v\ngot %v", tc.expected.err, err)
+		}
+		if !reflect.DeepEqual(tc.expected.res, res) {
+			t.Errorf("Update result check failed\nexpected %v\ngot %v", tc.expected.res, res)
 		}
 	}
 }

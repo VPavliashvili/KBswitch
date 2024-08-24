@@ -7,5 +7,5 @@ type SwitchesService interface {
 	GetSingle(string, string) (*models.Switch, error)
 	AddNew(models.SwitchRequestBody) (*int, error)
 	Remove(string, string) error
-	Update(models.SwitchRequestBody) (*models.Switch, error)
+	Update(brand, name string, body models.SwitchRequestBody) (*models.Switch, error)
 }
