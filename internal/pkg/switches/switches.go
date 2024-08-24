@@ -15,11 +15,11 @@ type service struct {
 }
 
 func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, error) {
-	exists, err := s.repo.Exists(reqbody.Brand, reqbody.Name)
+	switchID, err := s.repo.GetID(reqbody.Brand, reqbody.Name)
 	if err != nil {
 		return nil, err
 	}
-	if exists {
+	if switchID != nil {
 		return nil, fmt.Errorf("switch with brand '%s' and name '%s' already exists", reqbody.Brand, reqbody.Name)
 	}
 
@@ -60,12 +60,12 @@ func (s service) GetAll() ([]models.Switch, error) {
 }
 
 func (s service) GetSingle(brand, name string) (*models.Switch, error) {
-	exists, err := s.repo.Exists(brand, name)
+	switchID, err := s.repo.GetID(brand, name)
 
 	if err != nil {
 		return nil, err
 	}
-	if !exists {
+	if switchID == nil {
 		return nil, fmt.Errorf("given combination of brand and name not found")
 	}
 

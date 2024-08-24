@@ -15,7 +15,7 @@ func intptr(x int) *int {
 type fakeRepo struct {
 	getAllReturner    func() ([]models.SwitchEntity, error)
 	getSingleReturner func(string, string) (*models.SwitchEntity, error)
-	checkExists       func(string, string) (bool, error)
+	getID             func(string, string) (*int, error)
 	addNewAction      func(models.SwitchEntity) (*int, error)
 }
 
@@ -34,8 +34,8 @@ func (f fakeRepo) GetSingle(brand, name string) (*models.SwitchEntity, error) {
 	return f.getSingleReturner(brand, name)
 }
 
-func (f fakeRepo) Exists(brand, name string) (bool, error) {
-	return f.checkExists(brand, name)
+func (f fakeRepo) GetID(brand, name string) (*int, error) {
+	return f.getID(brand, name)
 }
 
 func TestAddNew(t *testing.T) {
@@ -49,8 +49,8 @@ func TestAddNew(t *testing.T) {
 	}{
 		{
 			repo: fakeRepo{
-				checkExists: func(s1, s2 string) (bool, error) {
-					return true, nil
+				getID: func(s1, s2 string) (*int, error) {
+					return intptr(123), nil
 				},
 			},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
@@ -64,8 +64,8 @@ func TestAddNew(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				checkExists: func(s1, s2 string) (bool, error) {
-					return false, fmt.Errorf("test")
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, fmt.Errorf("test")
 				},
 			},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
@@ -79,8 +79,8 @@ func TestAddNew(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				checkExists: func(s1, s2 string) (bool, error) {
-					return false, nil
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, nil
 				},
 				addNewAction: func(se models.SwitchEntity) (*int, error) {
 					return intptr(123), fmt.Errorf("test")
@@ -97,8 +97,8 @@ func TestAddNew(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				checkExists: func(s1, s2 string) (bool, error) {
-					return false, nil
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, nil
 				},
 				addNewAction: func(se models.SwitchEntity) (*int, error) {
 					return nil, fmt.Errorf("test")
@@ -115,8 +115,8 @@ func TestAddNew(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				checkExists: func(s1, s2 string) (bool, error) {
-					return false, nil
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, nil
 				},
 				addNewAction: func(se models.SwitchEntity) (*int, error) {
 					return nil, nil
@@ -133,8 +133,8 @@ func TestAddNew(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				checkExists: func(s1, s2 string) (bool, error) {
-					return false, nil
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, nil
 				},
 				addNewAction: func(se models.SwitchEntity) (*int, error) {
 					return intptr(123), nil
@@ -179,7 +179,7 @@ func TestGetSingle(t *testing.T) {
 				getSingleReturner: func(s1, s2 string) (*models.SwitchEntity, error) {
 					return nil, fmt.Errorf("test")
 				},
-				checkExists: func(s1, s2 string) (bool, error) { return true, nil }},
+				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil }},
 			expected: struct {
 				res *models.Switch
 				err error
@@ -193,7 +193,7 @@ func TestGetSingle(t *testing.T) {
 				getSingleReturner: func(brand, name string) (*models.SwitchEntity, error) {
 					return nil, nil
 				},
-				checkExists: func(s1, s2 string) (bool, error) { return true, nil },
+				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil },
 			},
 
 			expected: struct {
@@ -205,8 +205,8 @@ func TestGetSingle(t *testing.T) {
 			},
 		},
 		{
-			repo: fakeRepo{checkExists: func(s1, s2 string) (bool, error) {
-				return false, fmt.Errorf("test error from exists()")
+			repo: fakeRepo{getID: func(s1, s2 string) (*int, error) {
+				return nil, fmt.Errorf("test error from exists()")
 			}},
 			brand: "",
 			name:  "",
@@ -223,8 +223,8 @@ func TestGetSingle(t *testing.T) {
 				getSingleReturner: func(string, string) (*models.SwitchEntity, error) {
 					return nil, nil
 				},
-				checkExists: func(s1, s2 string) (bool, error) {
-					return false, nil
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, nil
 				},
 			},
 			brand: "bad brand",
@@ -242,8 +242,8 @@ func TestGetSingle(t *testing.T) {
 				getSingleReturner: func(string, string) (*models.SwitchEntity, error) {
 					return nil, nil
 				},
-				checkExists: func(s1, s2 string) (bool, error) {
-					return false, nil
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, nil
 				},
 			},
 			brand: "bad brand",
@@ -261,8 +261,8 @@ func TestGetSingle(t *testing.T) {
 				getSingleReturner: func(s1, s2 string) (*models.SwitchEntity, error) {
 					return &models.SwitchEntity{Name: "name", Brand: "brand"}, nil
 				},
-				checkExists: func(s1, s2 string) (bool, error) {
-					return true, nil
+				getID: func(s1, s2 string) (*int, error) {
+					return intptr(123), nil
 				},
 			},
 			brand: "brand",
