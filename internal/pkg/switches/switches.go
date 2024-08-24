@@ -14,6 +14,25 @@ type service struct {
 	repo repositories.SwitchesRepo
 }
 
+func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, error) {
+	exists, err := s.repo.Exists(reqbody.Brand, reqbody.Name)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, fmt.Errorf("switch with brand '%s' and name '%s' already exists", reqbody.Brand, reqbody.Name)
+	}
+
+	entity := models.SwitchEntity(reqbody)
+
+	resp, err := s.repo.AddNew(entity)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (s service) GetAll() ([]models.Switch, error) {
 	res := []models.Switch{}
 	resp, err := s.repo.GetAll()

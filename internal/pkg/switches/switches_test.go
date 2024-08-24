@@ -8,15 +8,20 @@ import (
 	"testing"
 )
 
+func intptr(x int) *int {
+	return &x
+}
+
 type fakeRepo struct {
 	getAllReturner    func() ([]models.SwitchEntity, error)
 	getSingleReturner func(string, string) (*models.SwitchEntity, error)
 	checkExists       func(string, string) (bool, error)
+	addNewAction      func(models.SwitchEntity) (*int, error)
 }
 
 // AddNew implements repositories.SwitchesRepo.
-func (f fakeRepo) AddNew(models.SwitchEntity) error {
-	panic("unimplemented")
+func (f fakeRepo) AddNew(rb models.SwitchEntity) (*int, error) {
+	return f.addNewAction(rb)
 }
 
 // GetAll implements repositories.SwitchesRepo.
@@ -33,7 +38,133 @@ func (f fakeRepo) Exists(brand, name string) (bool, error) {
 	return f.checkExists(brand, name)
 }
 
-func TestGetByID(t *testing.T) {
+func TestAddNew(t *testing.T) {
+	tcases := []struct {
+		repo     fakeRepo
+		reqbody  models.SwitchRequestBody
+		expected struct {
+			res *int
+			err error
+		}
+	}{
+		{
+			repo: fakeRepo{
+				checkExists: func(s1, s2 string) (bool, error) {
+					return true, nil
+				},
+			},
+			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
+			expected: struct {
+				res *int
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("switch with brand 'testb' and name 'testn' already exists"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				checkExists: func(s1, s2 string) (bool, error) {
+					return false, fmt.Errorf("test")
+				},
+			},
+			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
+			expected: struct {
+				res *int
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("test"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				checkExists: func(s1, s2 string) (bool, error) {
+					return false, nil
+				},
+				addNewAction: func(se models.SwitchEntity) (*int, error) {
+					return intptr(123), fmt.Errorf("test")
+				},
+			},
+			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
+			expected: struct {
+				res *int
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("test"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				checkExists: func(s1, s2 string) (bool, error) {
+					return false, nil
+				},
+				addNewAction: func(se models.SwitchEntity) (*int, error) {
+					return nil, fmt.Errorf("test")
+				},
+			},
+			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
+			expected: struct {
+				res *int
+				err error
+			}{
+				res: nil,
+				err: fmt.Errorf("test"),
+			},
+		},
+		{
+			repo: fakeRepo{
+				checkExists: func(s1, s2 string) (bool, error) {
+					return false, nil
+				},
+				addNewAction: func(se models.SwitchEntity) (*int, error) {
+					return nil, nil
+				},
+			},
+			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
+			expected: struct {
+				res *int
+				err error
+			}{
+				res: nil,
+				err: nil,
+			},
+		},
+		{
+			repo: fakeRepo{
+				checkExists: func(s1, s2 string) (bool, error) {
+					return false, nil
+				},
+				addNewAction: func(se models.SwitchEntity) (*int, error) {
+					return intptr(123), nil
+				},
+			},
+			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
+			expected: struct {
+				res *int
+				err error
+			}{
+				res: intptr(123),
+				err: nil,
+			},
+		},
+	}
+
+	for _, tc := range tcases {
+		unit := switches.New(tc.repo)
+		res, err := unit.AddNew(tc.reqbody)
+
+		if !reflect.DeepEqual(tc.expected.err, err) {
+			t.Errorf("AddNew error check failed\nexpected %v\ngot %v", tc.expected.err, err)
+		}
+		if !reflect.DeepEqual(tc.expected.res, res) {
+			t.Errorf("AddNew result check failed\nexpected %v\ngot %v", tc.expected.res, res)
+		}
+	}
+}
+
+func TestGetSingle(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
 		brand    string
@@ -90,7 +221,7 @@ func TestGetByID(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getSingleReturner: func(string, string) (*models.SwitchEntity, error) {
-					return nil, fmt.Errorf("given combination of brand and name not found")
+					return nil, nil
 				},
 				checkExists: func(s1, s2 string) (bool, error) {
 					return false, nil
