@@ -3,16 +3,16 @@ package switches
 import (
 	"encoding/json"
 	"fmt"
+	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
-	"kbswitch/internal/core/switches/services"
 	"net/http"
 )
 
 type controller struct {
-	service services.SwitchesService
+	service switches.Service
 }
 
-func New(service services.SwitchesService) controller {
+func New(service switches.Service) controller {
 	return controller{
 		service: service,
 	}

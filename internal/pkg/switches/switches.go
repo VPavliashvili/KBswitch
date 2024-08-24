@@ -2,16 +2,16 @@ package switches
 
 import (
 	"fmt"
+	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
-	"kbswitch/internal/core/switches/repositories"
 )
 
-func New(repo repositories.SwitchesRepo) service {
+func GetService(repo switches.Repo) switches.Service {
 	return service{repo: repo}
 }
 
 type service struct {
-	repo repositories.SwitchesRepo
+	repo switches.Repo
 }
 
 func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, error) {

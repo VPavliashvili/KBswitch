@@ -1,8 +1,7 @@
 package app
 
 import (
-	"kbswitch/internal/core/switches/repositories"
-	"kbswitch/internal/core/switches/services"
+	"kbswitch/internal/core/switches"
 	"time"
 )
 
@@ -14,11 +13,11 @@ type Application struct {
 }
 
 type InjectedRepos struct {
-	SwitchesRepo repositories.SwitchesRepo
+	SwitchesRepo switches.Repo
 }
 
 type InjectedServices struct {
-	SwitchesService services.SwitchesService
+	SwitchesService switches.Service
 }
 
 type Config struct {
