@@ -69,7 +69,7 @@ func (s service) GetSingle(brand, name string) (*models.Switch, error) {
 		return nil, fmt.Errorf("given combination of brand and name not found")
 	}
 
-	resp, err := s.repo.GetSingle(brand, name)
+	resp, err := s.repo.GetSingle(*switchID)
 	if resp == nil {
 		return nil, err
 	}

@@ -14,7 +14,7 @@ func intptr(x int) *int {
 
 type fakeRepo struct {
 	getAllReturner    func() ([]models.SwitchEntity, error)
-	getSingleReturner func(string, string) (*models.SwitchEntity, error)
+	getSingleReturner func(int) (*models.SwitchEntity, error)
 	getID             func(string, string) (*int, error)
 	addNewAction      func(models.SwitchEntity) (*int, error)
 }
@@ -30,8 +30,8 @@ func (f fakeRepo) GetAll() ([]models.SwitchEntity, error) {
 }
 
 // GetSingle implements repositories.SwitchesRepo.
-func (f fakeRepo) GetSingle(brand, name string) (*models.SwitchEntity, error) {
-	return f.getSingleReturner(brand, name)
+func (f fakeRepo) GetSingle(id int) (*models.SwitchEntity, error) {
+	return f.getSingleReturner(id)
 }
 
 func (f fakeRepo) GetID(brand, name string) (*int, error) {
@@ -176,7 +176,7 @@ func TestGetSingle(t *testing.T) {
 	}{
 		{
 			repo: fakeRepo{
-				getSingleReturner: func(s1, s2 string) (*models.SwitchEntity, error) {
+				getSingleReturner: func(int) (*models.SwitchEntity, error) {
 					return nil, fmt.Errorf("test")
 				},
 				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil }},
@@ -190,7 +190,7 @@ func TestGetSingle(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				getSingleReturner: func(brand, name string) (*models.SwitchEntity, error) {
+				getSingleReturner: func(int) (*models.SwitchEntity, error) {
 					return nil, nil
 				},
 				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil },
@@ -220,7 +220,7 @@ func TestGetSingle(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				getSingleReturner: func(string, string) (*models.SwitchEntity, error) {
+				getSingleReturner: func(int) (*models.SwitchEntity, error) {
 					return nil, nil
 				},
 				getID: func(s1, s2 string) (*int, error) {
@@ -239,7 +239,7 @@ func TestGetSingle(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				getSingleReturner: func(string, string) (*models.SwitchEntity, error) {
+				getSingleReturner: func(int) (*models.SwitchEntity, error) {
 					return nil, nil
 				},
 				getID: func(s1, s2 string) (*int, error) {
@@ -258,7 +258,7 @@ func TestGetSingle(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{
-				getSingleReturner: func(s1, s2 string) (*models.SwitchEntity, error) {
+				getSingleReturner: func(int) (*models.SwitchEntity, error) {
 					return &models.SwitchEntity{Name: "name", Brand: "brand"}, nil
 				},
 				getID: func(s1, s2 string) (*int, error) {
