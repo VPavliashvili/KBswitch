@@ -33,6 +33,23 @@ func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, error) {
 	return resp, nil
 }
 
+func (s service) Remove(brand, name string) error {
+	switchID, err := s.repo.GetID(brand, name)
+	if err != nil {
+		return err
+	}
+	if switchID == nil {
+		return fmt.Errorf("resource with given ID not found")
+	}
+
+	err = s.repo.Remove(*switchID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s service) GetAll() ([]models.Switch, error) {
 	res := []models.Switch{}
 	resp, err := s.repo.GetAll()

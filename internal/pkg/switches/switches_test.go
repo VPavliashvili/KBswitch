@@ -13,10 +13,16 @@ func intptr(x int) *int {
 }
 
 type fakeRepo struct {
+	getID             func(string, string) (*int, error)
 	getAllReturner    func() ([]models.SwitchEntity, error)
 	getSingleReturner func(int) (*models.SwitchEntity, error)
-	getID             func(string, string) (*int, error)
 	addNewAction      func(models.SwitchEntity) (*int, error)
+	removeAction      func(int) error
+}
+
+// Remove implements repositories.SwitchesRepo.
+func (f fakeRepo) Remove(id int) error {
+	return f.removeAction(id)
 }
 
 // AddNew implements repositories.SwitchesRepo.
@@ -34,8 +40,84 @@ func (f fakeRepo) GetSingle(id int) (*models.SwitchEntity, error) {
 	return f.getSingleReturner(id)
 }
 
+// GetSingle implements repositories.SwitchesRepo.
 func (f fakeRepo) GetID(brand, name string) (*int, error) {
 	return f.getID(brand, name)
+}
+
+func TestRemove(t *testing.T) {
+	tcases := []struct {
+		repo     fakeRepo
+		brand    string
+		name     string
+		expected error
+	}{
+		{
+			repo: fakeRepo{
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, nil
+				},
+			},
+			brand:    "test",
+			name:     "test",
+			expected: fmt.Errorf("resource with given ID not found"),
+		},
+		{
+			repo: fakeRepo{
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, fmt.Errorf("test")
+				},
+			},
+			brand:    "test",
+			name:     "test",
+			expected: fmt.Errorf("test"),
+		},
+		{
+			repo: fakeRepo{
+				getID: func(s1, s2 string) (*int, error) {
+					return intptr(123), fmt.Errorf("test")
+				},
+			},
+			brand:    "test",
+			name:     "test",
+			expected: fmt.Errorf("test"),
+		},
+		{
+			repo: fakeRepo{
+				getID: func(s1, s2 string) (*int, error) {
+					return intptr(123), nil
+				},
+				removeAction: func(i int) error {
+					return fmt.Errorf("test")
+				},
+			},
+			brand:    "test",
+			name:     "test",
+			expected: fmt.Errorf("test"),
+		},
+		{
+			repo: fakeRepo{
+				getID: func(s1, s2 string) (*int, error) {
+					return intptr(123), nil
+				},
+				removeAction: func(i int) error {
+					return nil
+				},
+			},
+			brand:    "test",
+			name:     "test",
+			expected: nil,
+		},
+	}
+
+	for _, tc := range tcases {
+		unit := switches.New(tc.repo)
+		err := unit.Remove(tc.brand, tc.name)
+
+		if !reflect.DeepEqual(tc.expected, err) {
+			t.Errorf("AddNew error check failed\nexpected %v\ngot %v", tc.expected, err)
+		}
+	}
 }
 
 func TestAddNew(t *testing.T) {
