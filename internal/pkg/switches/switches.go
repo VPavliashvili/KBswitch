@@ -6,7 +6,7 @@ import (
 	"kbswitch/internal/core/switches/models"
 )
 
-func GetService(repo switches.Repo) switches.Service {
+func New(repo switches.Repo) switches.Service {
 	return service{repo: repo}
 }
 

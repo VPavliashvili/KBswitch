@@ -117,7 +117,7 @@ func TestRemove(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.GetService(tc.repo)
+		unit := switches.New(tc.repo)
 		err := unit.Remove(tc.brand, tc.name)
 
 		if !reflect.DeepEqual(tc.expected, err) {
@@ -315,7 +315,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.GetService(tc.repo)
+		unit := switches.New(tc.repo)
 		res, err := unit.Update(tc.in.brand, tc.in.name, tc.in.body)
 
 		if !reflect.DeepEqual(tc.expected.err, err) {
@@ -441,7 +441,7 @@ func TestAddNew(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.GetService(tc.repo)
+		unit := switches.New(tc.repo)
 		res, err := unit.AddNew(tc.reqbody)
 
 		if !reflect.DeepEqual(tc.expected.err, err) {
@@ -567,7 +567,7 @@ func TestGetSingle(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.GetService(tc.repo)
+		unit := switches.New(tc.repo)
 		res, err := unit.GetSingle(tc.brand, tc.name)
 
 		if !reflect.DeepEqual(tc.expected.err, err) {
@@ -648,7 +648,7 @@ func TestGetAll(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.GetService(tc.repo)
+		unit := switches.New(tc.repo)
 		res, err := unit.GetAll()
 
 		if !reflect.DeepEqual(tc.expected.err, err) {

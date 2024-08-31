@@ -26,11 +26,11 @@ func main() {
 			WriteTimeout: 5,
 		},
 		BuildDate: compTime,
-		InjectedRepos: app.InjectedRepos{
-			SwitchesRepo: nil, // after writing real implementation gotta create the instance here
+		Repos: app.InjectedRepos{
+			Switches: nil, // after writing real implementation gotta create the instance here
 		},
-		InjectedServices: app.InjectedServices{
-			SwitchesService: nil, // after writing real implementation gotta create the instance here
+		Services: app.InjectedServices{
+			Switches: nil, // after writing real implementation gotta create the instance here
 		},
 	}
 

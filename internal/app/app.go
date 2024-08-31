@@ -6,18 +6,18 @@ import (
 )
 
 type Application struct {
-	Config           Config
-	BuildDate        time.Time
-	InjectedRepos    InjectedRepos
-	InjectedServices InjectedServices
+	Config    Config
+	BuildDate time.Time
+	Repos     InjectedRepos
+	Services  InjectedServices
 }
 
 type InjectedRepos struct {
-	SwitchesRepo switches.Repo
+	Switches switches.Repo
 }
 
 type InjectedServices struct {
-	SwitchesService switches.Service
+	Switches switches.Service
 }
 
 type Config struct {
