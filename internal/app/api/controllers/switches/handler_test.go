@@ -36,7 +36,7 @@ func (w *fakeWriter) WriteHeader(statusCode int) {
 
 type fakeService struct {
 	pluralReturner     func() ([]models.Switch, *common.AppError)
-	singleReturner     func(string, string) (*models.Switch, error)
+	singleReturner     func(string, string) (*models.Switch, *common.AppError)
 	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
 	deleteSwitchAction func(string, string) *common.AppError
 	updateSwitchAction func(string, string, models.SwitchRequestBody) (*models.Switch, error)
@@ -58,7 +58,7 @@ func (f fakeService) GetAll() ([]models.Switch, *common.AppError) {
 	return f.pluralReturner()
 }
 
-func (f fakeService) GetSingle(brand, name string) (*models.Switch, error) {
+func (f fakeService) GetSingle(brand, name string) (*models.Switch, *common.AppError) {
 	return f.singleReturner(brand, name)
 }
 
@@ -451,7 +451,7 @@ func TestHandleSingleSwitch(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, error) {
+			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, *common.AppError) {
 				return nil, nil
 			}},
 			w: &fakeWriter{},
@@ -474,8 +474,9 @@ func TestHandleSingleSwitch(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, error) {
-				return nil, fmt.Errorf("tst")
+			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, *common.AppError) {
+				e := common.NewError(common.ErrInternalServer, "tst")
+				return nil, &e
 			}},
 			w: &fakeWriter{},
 			req: func() *http.Request {
@@ -497,7 +498,7 @@ func TestHandleSingleSwitch(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, error) {
+			service: fakeService{singleReturner: func(brand, name string) (*models.Switch, *common.AppError) {
 				return &models.Switch{
 					Lifespan:         100,
 					OperatingForce:   50,

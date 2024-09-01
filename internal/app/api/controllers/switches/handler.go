@@ -99,7 +99,9 @@ func (c controller) HandleSingleSwitch(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := c.service.GetSingle(brand, name)
 	if err != nil {
-		writeErr(err.Error(), http.StatusInternalServerError, w)
+		e := common.ToAPIErr(*err)
+		w.WriteHeader(e.Status)
+		fmt.Fprint(w, e.Error())
 		return
 	}
 	if resp == nil {

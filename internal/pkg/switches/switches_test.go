@@ -10,24 +10,24 @@ import (
 	"testing"
 )
 
-func assertErrorsEqual(t *testing.T, want *common.AppError, got *common.AppError) {
+func assertErrorsEqual(method string, t *testing.T, want *common.AppError, got *common.AppError) {
 	if want == nil && got != nil {
-		t.Errorf("expected error in nil, when error returned: %v", got)
+		t.Errorf("in method %s: expected error equals to nil, when error returned: %v", method, got)
 	} else if want != nil {
 		et := want.Errtype.Error() == got.Errtype.Error()
 		er := want.Reason.Error() == got.Reason.Error()
 		equals := et && er
 
 		if !equals {
-			t.Errorf("remove error check failed\nexpected type: %v\ngot type: %v\nexpected reason: %v\ngot reason: %v",
-				want.Errtype, got.Errtype, want.Reason, got.Reason)
+			t.Errorf("in method %s: error check failed\nexpected type: %v\ngot type: %v\nexpected reason: %v\ngot reason: %v",
+				method, want.Errtype, got.Errtype, want.Reason, got.Reason)
 		}
 	}
 }
 
-func assertResultsEqual(t *testing.T, want any, got any) {
+func assertResultsEqual(method string, t *testing.T, want any, got any) {
 	if !reflect.DeepEqual(want, got) {
-		t.Errorf("GetAll result check failed\nexpected %v\ngot %v", want, got)
+		t.Errorf("in method %s: result check failed\nexpected %v\ngot %v", method, want, got)
 	}
 }
 
@@ -145,7 +145,7 @@ func TestRemove(t *testing.T) {
 		unit := switches.New(tc.repo)
 		err := unit.Remove(tc.brand, tc.name)
 
-		assertErrorsEqual(t, tc.expected, err)
+		assertErrorsEqual("Remove", t, tc.expected, err)
 	}
 }
 
@@ -483,7 +483,7 @@ func TestGetSingle(t *testing.T) {
 		name     string
 		expected struct {
 			res *models.Switch
-			err error
+			err *common.AppError
 		}
 	}{
 		{
@@ -494,10 +494,10 @@ func TestGetSingle(t *testing.T) {
 				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil }},
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: switches.Wrap(errTest),
 			},
 		},
 		{
@@ -510,10 +510,10 @@ func TestGetSingle(t *testing.T) {
 
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: nil,
+				err: &switches.ErrErrorMissing,
 			},
 		},
 		{
@@ -524,10 +524,10 @@ func TestGetSingle(t *testing.T) {
 			name:  "",
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: switches.Wrap(errTest),
 			},
 		},
 		{
@@ -543,10 +543,10 @@ func TestGetSingle(t *testing.T) {
 			name:  "or bad name",
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: switches.ErrNoSwitch,
+				err: &switches.ErrNoSwitch,
 			},
 		},
 		{
@@ -562,10 +562,10 @@ func TestGetSingle(t *testing.T) {
 			name:  "or bad name",
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: switches.ErrNoSwitch,
+				err: &switches.ErrNoSwitch,
 			},
 		},
 		{
@@ -581,7 +581,7 @@ func TestGetSingle(t *testing.T) {
 			name:  "name",
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: &models.Switch{Name: "name", Brand: "brand"},
 				err: nil,
@@ -593,12 +593,8 @@ func TestGetSingle(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.GetSingle(tc.brand, tc.name)
 
-		if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
-			t.Errorf("GetSingle error check failed\nexpected %v\ngot %v", tc.expected.err, err)
-		}
-		if !reflect.DeepEqual(tc.expected.res, res) {
-			t.Errorf("GetSingle result check failed\nexpected %v\ngot %v", tc.expected.res, res)
-		}
+		assertErrorsEqual("GetSingle", t, tc.expected.err, err)
+		assertResultsEqual("GetSingle", t, tc.expected.res, res)
 	}
 }
 
@@ -674,7 +670,7 @@ func TestGetAll(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.GetAll()
 
-		assertErrorsEqual(t, tc.expected.err, err)
-		assertResultsEqual(t, tc.expected.res, res)
+		assertErrorsEqual("GetAll", t, tc.expected.err, err)
+		assertResultsEqual("GetAll", t, tc.expected.res, res)
 	}
 }

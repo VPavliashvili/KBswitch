@@ -9,6 +9,7 @@ import (
 var (
 	ErrNoSwitch      = common.NewError(common.ErrNotFound, "resource with given brand and name not found")
 	ErrAlreadyExists = common.NewError(common.ErrBadRequest, "switch with given brand and name already exist")
+	ErrErrorMissing  = common.NewError(common.ErrInternalServer, "no error returned when response was missing")
 )
 
 func Wrap(err error) *common.AppError {
@@ -99,21 +100,24 @@ func (s service) GetAll() ([]models.Switch, *common.AppError) {
 	return res, nil
 }
 
-func (s service) GetSingle(brand, name string) (*models.Switch, error) {
+func (s service) GetSingle(brand, name string) (*models.Switch, *common.AppError) {
 	switchID, err := s.repo.GetID(brand, name)
 
 	if err != nil {
-		return nil, err
+		return nil, Wrap(err)
 	}
 	if switchID == nil {
-		return nil, ErrNoSwitch
+		return nil, &ErrNoSwitch
 	}
 
 	resp, err := s.repo.GetSingle(*switchID)
+	if err != nil {
+		return nil, Wrap(err)
+	}
 	if resp == nil {
-		return nil, err
+		return nil, &ErrErrorMissing
 	}
 	res := models.Switch(*resp)
 
-	return &res, err
+	return &res, nil
 }

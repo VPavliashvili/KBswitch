@@ -7,7 +7,7 @@ import (
 
 type Service interface {
 	GetAll() ([]models.Switch, *common.AppError)
-	GetSingle(string, string) (*models.Switch, error)
+	GetSingle(string, string) (*models.Switch, *common.AppError)
 	AddNew(models.SwitchRequestBody) (*int, error)
 	Remove(string, string) *common.AppError
 	Update(brand, name string, body models.SwitchRequestBody) (*models.Switch, error)
