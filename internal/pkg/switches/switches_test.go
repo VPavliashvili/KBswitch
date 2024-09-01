@@ -10,6 +10,27 @@ import (
 	"testing"
 )
 
+func assertErrorsEqual(t *testing.T, want *common.AppError, got *common.AppError) {
+	if want == nil && got != nil {
+		t.Errorf("expected error in nil, when error returned: %v", got)
+	} else if want != nil {
+		et := want.Errtype.Error() == got.Errtype.Error()
+		er := want.Reason.Error() == got.Reason.Error()
+		equals := et && er
+
+		if !equals {
+			t.Errorf("remove error check failed\nexpected type: %v\ngot type: %v\nexpected reason: %v\ngot reason: %v",
+				want.Errtype, got.Errtype, want.Reason, got.Reason)
+		}
+	}
+}
+
+func assertResultsEqual(t *testing.T, want any, got any) {
+	if !reflect.DeepEqual(want, got) {
+		t.Errorf("GetAll result check failed\nexpected %v\ngot %v", want, got)
+	}
+}
+
 var errTest = fmt.Errorf("test")
 
 func intptr(x int) *int {
@@ -124,12 +145,7 @@ func TestRemove(t *testing.T) {
 		unit := switches.New(tc.repo)
 		err := unit.Remove(tc.brand, tc.name)
 
-		if tc.expected == nil && err != nil {
-			t.Errorf("expected error in nil, when error returned: %v", err)
-		} else if tc.expected != nil && !tc.expected.Equals(*err) {
-			t.Errorf("remove error check failed\nexpected type: %v\ngot type: %v\nexpected reason: %v\ngot reason: %v",
-				tc.expected.Errtype, err.Errtype, tc.expected.Reason, err.Reason)
-		}
+		assertErrorsEqual(t, tc.expected, err)
 	}
 }
 
@@ -591,7 +607,7 @@ func TestGetAll(t *testing.T) {
 		repo     fakeRepo
 		expected struct {
 			res []models.Switch
-			err error
+			err *common.AppError
 		}
 	}{
 		{
@@ -602,10 +618,10 @@ func TestGetAll(t *testing.T) {
 			},
 			expected: struct {
 				res []models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: []models.Switch{},
-				err: errTest,
+				err: switches.Wrap(errTest),
 			},
 		},
 		{
@@ -616,7 +632,7 @@ func TestGetAll(t *testing.T) {
 			},
 			expected: struct {
 				res []models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: []models.Switch{
 					{Name: "testname", Brand: "idkbrand"},
@@ -632,7 +648,7 @@ func TestGetAll(t *testing.T) {
 			},
 			expected: struct {
 				res []models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: []models.Switch{},
 				err: nil,
@@ -646,7 +662,7 @@ func TestGetAll(t *testing.T) {
 			},
 			expected: struct {
 				res []models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: []models.Switch{},
 				err: nil,
@@ -658,11 +674,7 @@ func TestGetAll(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.GetAll()
 
-		if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
-			t.Errorf("GetAll error check failed\nexpected %v\ngot %v", tc.expected.err, err)
-		}
-		if !reflect.DeepEqual(tc.expected.res, res) {
-			t.Errorf("GetAll result check failed\nexpected %v\ngot %v", tc.expected.res, res)
-		}
+		assertErrorsEqual(t, tc.expected.err, err)
+		assertResultsEqual(t, tc.expected.res, res)
 	}
 }

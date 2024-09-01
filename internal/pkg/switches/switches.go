@@ -83,30 +83,20 @@ func (s service) Remove(brand, name string) *common.AppError {
 	return nil
 }
 
-func (s service) GetAll() ([]models.Switch, error) {
+func (s service) GetAll() ([]models.Switch, *common.AppError) {
 	res := []models.Switch{}
 	resp, err := s.repo.GetAll()
 
 	for _, item := range resp {
-		// s := models.Switch{
-		// 	Brand:            item.Brand,
-		// 	ActuationType:    item.ActuationType,
-		// 	Lifespan:         item.Lifespan,
-		// 	Name:             item.Name,
-		// 	Image:            item.Image,
-		// 	OperatingForce:   item.OperatingForce,
-		// 	ActivationTravel: item.ActivationTravel,
-		// 	TotalTravel:      item.TotalTravel,
-		// 	SoundProfile:     item.SoundProfile,
-		// 	TriggerMethod:    item.TriggerMethod,
-		// 	Profile:          item.Profile,
-		// }
 		s := models.Switch(item)
 
 		res = append(res, s)
 	}
+	if err != nil {
+		return res, Wrap(err)
+	}
 
-	return res, err
+	return res, nil
 }
 
 func (s service) GetSingle(brand, name string) (*models.Switch, error) {

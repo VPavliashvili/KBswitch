@@ -35,7 +35,7 @@ func (w *fakeWriter) WriteHeader(statusCode int) {
 }
 
 type fakeService struct {
-	pluralReturner     func() ([]models.Switch, error)
+	pluralReturner     func() ([]models.Switch, *common.AppError)
 	singleReturner     func(string, string) (*models.Switch, error)
 	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
 	deleteSwitchAction func(string, string) *common.AppError
@@ -54,7 +54,7 @@ func (f fakeService) AddNew(s models.SwitchRequestBody) (*int, error) {
 	return f.addSwitchAction(s)
 }
 
-func (f fakeService) GetAll() ([]models.Switch, error) {
+func (f fakeService) GetAll() ([]models.Switch, *common.AppError) {
 	return f.pluralReturner()
 }
 
@@ -285,7 +285,7 @@ func TestHandleSwitches(t *testing.T) {
 		{
 			w: &fakeWriter{},
 			service: fakeService{
-				pluralReturner: func() ([]models.Switch, error) {
+				pluralReturner: func() ([]models.Switch, *common.AppError) {
 					return []models.Switch{
 						{
 							Lifespan:         100,
@@ -319,8 +319,9 @@ func TestHandleSwitches(t *testing.T) {
 		{
 			w: &fakeWriter{},
 			service: fakeService{
-				pluralReturner: func() ([]models.Switch, error) {
-					return nil, fmt.Errorf("tst")
+				pluralReturner: func() ([]models.Switch, *common.AppError) {
+					e := common.NewError(common.ErrInternalServer, "tst")
+					return nil, &e
 				},
 			},
 			expected: struct {
@@ -338,7 +339,7 @@ func TestHandleSwitches(t *testing.T) {
 		{
 			w: &fakeWriter{},
 			service: fakeService{
-				pluralReturner: func() ([]models.Switch, error) {
+				pluralReturner: func() ([]models.Switch, *common.AppError) {
 					sws := make([]models.Switch, 0)
 					return sws, nil
 				},
@@ -354,7 +355,7 @@ func TestHandleSwitches(t *testing.T) {
 		{
 			w: &fakeWriter{},
 			service: fakeService{
-				pluralReturner: func() ([]models.Switch, error) {
+				pluralReturner: func() ([]models.Switch, *common.AppError) {
 					return nil, nil
 				},
 			},

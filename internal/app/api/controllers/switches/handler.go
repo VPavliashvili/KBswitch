@@ -41,7 +41,9 @@ func writeErr(err string, status int, w http.ResponseWriter) {
 func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 	resp, err := c.service.GetAll()
 	if err != nil {
-		writeErr(err.Error(), http.StatusInternalServerError, w)
+		e := common.ToAPIErr(*err)
+		w.WriteHeader(e.Status)
+		fmt.Fprint(w, e.Error())
 		return
 	}
 	if resp == nil {

@@ -31,12 +31,6 @@ func (e AppError) Error() string {
 	return errors.Join(e.Errtype, e.Reason).Error()
 }
 
-func (e AppError) Equals(other AppError) bool {
-	t := e.Errtype.Error() == other.Errtype.Error()
-	r := e.Reason.Error() == other.Reason.Error()
-	return t && r
-}
-
 func NewError(errtype error, reason string) AppError {
 	return AppError{
 		Errtype: errtype,
