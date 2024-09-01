@@ -21,4 +21,4 @@ COPY . .
 
 RUN git config --global --add safe.directory /app
 
-CMD swag init -d cmd/api/,internal/app/api/controllers/system/,internal/app/api/controllers/switches/,internal/core/switches/models/ && CompileDaemon --exclude-dir="docs" --build="./build.sh" --command="./main" --color
+CMD swag init -d cmd/api/,internal/app/api/controllers/system/,internal/app/api/controllers/switches/,internal/core/switches/models/,internal/core/common/ && CompileDaemon --exclude-dir="docs" --build="./build.sh" --command="./main" --color

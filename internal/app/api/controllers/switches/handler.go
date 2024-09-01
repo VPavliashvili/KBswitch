@@ -36,7 +36,7 @@ func writeErr(err string, status int, w http.ResponseWriter) {
 //	@Tags			switches
 //	@Produce		json
 //	@Success		200	{array}		SwitchDTO
-//	@Failure		500	{object}	models.APIError
+//	@Failure		500	{object}	common.APIError
 //	@Router			/api/switches [get]
 func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 	resp, err := c.service.GetAll()
@@ -74,9 +74,9 @@ func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 //	@Tags			switches
 //	@Produce		json
 //	@Success		200	{object}	SwitchDTO
-//	@Failure		500	{object}	models.APIError
-//	@Failure		400	{object}	models.APIError
-//	@Failure		404	{object}	models.APIError
+//	@Failure		500	{object}	common.APIError
+//	@Failure		400	{object}	common.APIError
+//	@Failure		404	{object}	common.APIError
 //	@Router			/api/switches/{brand}/{name} [get]
 func (c controller) HandleSingleSwitch(w http.ResponseWriter, r *http.Request) {
 	brand := r.PathValue("brand")
@@ -126,9 +126,9 @@ func (c controller) HandleSingleSwitch(w http.ResponseWriter, r *http.Request) {
 //	@Param			brand	path	int	true	"brand of the switch to delete"
 //	@Param			name	path	int	true	"name of the switch to delete"
 //	@Success		204
-//	@Failure		500	{object}	models.APIError
-//	@Failure		400	{object}	models.APIError
-//	@Failure		404	{object}	models.APIError
+//	@Failure		500	{object}	common.APIError
+//	@Failure		400	{object}	common.APIError
+//	@Failure		404	{object}	common.APIError
 //	@Router			/api/switches/{brand}/{name} [delete]
 func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
 	brand := r.PathValue("brand")
@@ -166,8 +166,8 @@ func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
 //	@Param			brand	path		int	true	"brand of the switch to update"
 //	@Param			name	path		int	true	"name of the switch to update"
 //	@Success		200		{object}	SwitchDTO
-//	@Failure		500		{object}	models.APIError
-//	@Failure		400		{object}	models.APIError
+//	@Failure		500		{object}	common.APIError
+//	@Failure		400		{object}	common.APIError
 //	@Router			/api/switches/{brand}/{name} [patch]
 func (c controller) HandleSwitchUpdate(w http.ResponseWriter, r *http.Request) {
 	brand := r.PathValue("brand")
@@ -225,8 +225,8 @@ func (c controller) HandleSwitchUpdate(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Param			newswitch	body		models.SwitchRequestBody	true	"Switch to add"
 //	@Success		200			{object}	string
-//	@Failure		500			{object}	models.APIError
-//	@Failure		400			{object}	models.APIError
+//	@Failure		500			{object}	common.APIError
+//	@Failure		400			{object}	common.APIError
 //	@Router			/api/switches [post]
 func (c controller) HandleSwitchAdd(w http.ResponseWriter, r *http.Request) {
 	var req models.SwitchRequestBody
