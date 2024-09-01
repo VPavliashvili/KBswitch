@@ -37,7 +37,7 @@ func (w *fakeWriter) WriteHeader(statusCode int) {
 type fakeService struct {
 	pluralReturner     func() ([]models.Switch, *common.AppError)
 	singleReturner     func(string, string) (*models.Switch, *common.AppError)
-	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
+	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, *common.AppError)
 	deleteSwitchAction func(string, string) *common.AppError
 	updateSwitchAction func(string, string, models.SwitchRequestBody) (*models.Switch, error)
 }
@@ -50,7 +50,7 @@ func (f fakeService) Remove(brand, name string) *common.AppError {
 	return f.deleteSwitchAction(brand, name)
 }
 
-func (f fakeService) AddNew(s models.SwitchRequestBody) (*int, error) {
+func (f fakeService) AddNew(s models.SwitchRequestBody) (*int, *common.AppError) {
 	return f.addSwitchAction(s)
 }
 
@@ -724,8 +724,9 @@ func TestHandleSwitchAdd(t *testing.T) {
 		},
 		{
 			service: fakeService{
-				addSwitchAction: func(reqbody models.SwitchRequestBody) (*int, error) {
-					return nil, fmt.Errorf("tst")
+				addSwitchAction: func(reqbody models.SwitchRequestBody) (*int, *common.AppError) {
+					e := common.NewError(common.ErrBadRequest, "tst")
+					return nil, &e
 				},
 			},
 			w: &fakeWriter{},
@@ -742,15 +743,15 @@ func TestHandleSwitchAdd(t *testing.T) {
 				headerStatus int
 			}{
 				data: common.APIError{
-					Status:  http.StatusInternalServerError,
+					Status:  http.StatusBadRequest,
 					Message: "tst",
 				}.Error(),
-				headerStatus: http.StatusInternalServerError,
+				headerStatus: http.StatusBadRequest,
 			},
 		},
 		{
 			service: fakeService{
-				addSwitchAction: func(reqbody models.SwitchRequestBody) (*int, error) {
+				addSwitchAction: func(reqbody models.SwitchRequestBody) (*int, *common.AppError) {
 					return intptr(123), nil
 				},
 			},

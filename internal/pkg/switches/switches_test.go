@@ -1,6 +1,7 @@
 package switches_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"kbswitch/internal/core/common"
@@ -27,7 +28,9 @@ func assertErrorsEqual(method string, t *testing.T, want *common.AppError, got *
 
 func assertResultsEqual(method string, t *testing.T, want any, got any) {
 	if !reflect.DeepEqual(want, got) {
-		t.Errorf("in method %s: result check failed\nexpected %v\ngot %v", method, want, got)
+		w, _ := json.Marshal(want)
+		g, _ := json.Marshal(got)
+		t.Errorf("in method %s: result check failed\nexpected %s\ngot %s", method, w, g)
 	}
 }
 
@@ -356,7 +359,7 @@ func TestAddNew(t *testing.T) {
 		reqbody  models.SwitchRequestBody
 		expected struct {
 			res *int
-			err error
+			err *common.AppError
 		}
 	}{
 		{
@@ -368,10 +371,10 @@ func TestAddNew(t *testing.T) {
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res *int
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: switches.ErrAlreadyExists,
+				err: &switches.ErrAlreadyExists,
 			},
 		},
 		{
@@ -383,10 +386,10 @@ func TestAddNew(t *testing.T) {
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res *int
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: switches.Wrap(errTest),
 			},
 		},
 		{
@@ -401,10 +404,10 @@ func TestAddNew(t *testing.T) {
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res *int
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: switches.Wrap(errTest),
 			},
 		},
 		{
@@ -419,10 +422,10 @@ func TestAddNew(t *testing.T) {
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res *int
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: switches.Wrap(errTest),
 			},
 		},
 		{
@@ -437,7 +440,7 @@ func TestAddNew(t *testing.T) {
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res *int
-				err error
+				err *common.AppError
 			}{
 				res: nil,
 				err: nil,
@@ -455,7 +458,7 @@ func TestAddNew(t *testing.T) {
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res *int
-				err error
+				err *common.AppError
 			}{
 				res: intptr(123),
 				err: nil,
@@ -467,12 +470,8 @@ func TestAddNew(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.AddNew(tc.reqbody)
 
-		if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
-			t.Errorf("AddNew error check failed\nexpected %v\ngot %v", tc.expected.err, err)
-		}
-		if !reflect.DeepEqual(tc.expected.res, res) {
-			t.Errorf("AddNew result check failed\nexpected %v\ngot %v", tc.expected.res, res)
-		}
+		assertErrorsEqual("AddNew", t, tc.expected.err, err)
+		assertResultsEqual("AddNew", t, tc.expected.res, res)
 	}
 }
 

@@ -239,9 +239,11 @@ func (c controller) HandleSwitchAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := c.service.AddNew(req)
-	if err != nil {
-		writeErr(err.Error(), http.StatusInternalServerError, w)
+	id, e := c.service.AddNew(req)
+	if e != nil {
+		e := common.ToAPIErr(*e)
+		w.WriteHeader(e.Status)
+		fmt.Fprint(w, e.Error())
 		return
 	}
 

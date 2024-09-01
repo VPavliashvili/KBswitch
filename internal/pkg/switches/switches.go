@@ -25,20 +25,20 @@ type service struct {
 	repo switches.Repo
 }
 
-func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, error) {
+func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, *common.AppError) {
 	switchID, err := s.repo.GetID(reqbody.Brand, reqbody.Name)
 	if err != nil {
-		return nil, err
+		return nil, Wrap(err)
 	}
 	if switchID != nil {
-		return nil, ErrAlreadyExists
+		return nil, &ErrAlreadyExists
 	}
 
 	entity := models.SwitchEntity(reqbody)
 
 	resp, err := s.repo.AddNew(entity)
 	if err != nil {
-		return nil, err
+		return nil, Wrap(err)
 	}
 
 	return resp, nil
