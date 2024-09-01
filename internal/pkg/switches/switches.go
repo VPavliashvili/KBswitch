@@ -1,10 +1,19 @@
 package switches
 
 import (
-	"fmt"
 	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
 )
+
+var (
+	ErrNoSwitch      = models.NewError(models.ErrNotFound, "resource with given brand and name not found")
+	ErrAlreadyExists = models.NewError(models.ErrBadRequest, "switch with given brand and name already exist")
+)
+
+func Wrap(err error) *models.AppError {
+	e := models.NewError(models.ErrInternalServer, err.Error())
+	return &e
+}
 
 func New(repo switches.Repo) switches.Service {
 	return service{repo: repo}
@@ -20,7 +29,7 @@ func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, error) {
 		return nil, err
 	}
 	if switchID != nil {
-		return nil, fmt.Errorf("switch with brand '%s' and name '%s' already exists", reqbody.Brand, reqbody.Name)
+		return nil, ErrAlreadyExists
 	}
 
 	entity := models.SwitchEntity(reqbody)
@@ -39,7 +48,7 @@ func (s service) Update(brand, name string, body models.SwitchRequestBody) (*mod
 		return nil, err
 	}
 	if switchID == nil {
-		return nil, fmt.Errorf("resource with given brand and name not found")
+		return nil, ErrNoSwitch
 	}
 
 	entity := models.SwitchEntity(body)
@@ -56,18 +65,18 @@ func (s service) Update(brand, name string, body models.SwitchRequestBody) (*mod
 	return &res, nil
 }
 
-func (s service) Remove(brand, name string) error {
+func (s service) Remove(brand, name string) *models.AppError {
 	switchID, err := s.repo.GetID(brand, name)
 	if err != nil {
-		return err
+		return Wrap(err)
 	}
 	if switchID == nil {
-		return fmt.Errorf("resource with given brand and name not found")
+		return &ErrNoSwitch
 	}
 
 	err = s.repo.Remove(*switchID)
 	if err != nil {
-		return err
+		return Wrap(err)
 	}
 
 	return nil
@@ -106,7 +115,7 @@ func (s service) GetSingle(brand, name string) (*models.Switch, error) {
 		return nil, err
 	}
 	if switchID == nil {
-		return nil, fmt.Errorf("given combination of brand and name not found")
+		return nil, ErrNoSwitch
 	}
 
 	resp, err := s.repo.GetSingle(*switchID)

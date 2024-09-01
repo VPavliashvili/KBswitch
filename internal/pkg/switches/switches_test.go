@@ -1,12 +1,15 @@
 package switches_test
 
 import (
+	"errors"
 	"fmt"
 	"kbswitch/internal/core/switches/models"
 	"kbswitch/internal/pkg/switches"
 	"reflect"
 	"testing"
 )
+
+var errTest = fmt.Errorf("test")
 
 func intptr(x int) *int {
 	return &x
@@ -56,7 +59,7 @@ func TestRemove(t *testing.T) {
 		repo     fakeRepo
 		brand    string
 		name     string
-		expected error
+		expected *models.AppError
 	}{
 		{
 			repo: fakeRepo{
@@ -66,27 +69,27 @@ func TestRemove(t *testing.T) {
 			},
 			brand:    "test",
 			name:     "test",
-			expected: fmt.Errorf("resource with given brand and name not found"),
+			expected: &switches.ErrNoSwitch,
 		},
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return nil, fmt.Errorf("test")
+					return nil, errTest
 				},
 			},
 			brand:    "test",
 			name:     "test",
-			expected: fmt.Errorf("test"),
+			expected: switches.Wrap(errTest),
 		},
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return intptr(123), fmt.Errorf("test")
+					return intptr(123), errTest
 				},
 			},
 			brand:    "test",
 			name:     "test",
-			expected: fmt.Errorf("test"),
+			expected: switches.Wrap(errTest),
 		},
 		{
 			repo: fakeRepo{
@@ -94,12 +97,12 @@ func TestRemove(t *testing.T) {
 					return intptr(123), nil
 				},
 				removeAction: func(i int) error {
-					return fmt.Errorf("test")
+					return errTest
 				},
 			},
 			brand:    "test",
 			name:     "test",
-			expected: fmt.Errorf("test"),
+			expected: switches.Wrap(errTest),
 		},
 		{
 			repo: fakeRepo{
@@ -120,8 +123,11 @@ func TestRemove(t *testing.T) {
 		unit := switches.New(tc.repo)
 		err := unit.Remove(tc.brand, tc.name)
 
-		if !reflect.DeepEqual(tc.expected, err) {
-			t.Errorf("Remove error check failed\nexpected %v\ngot %v", tc.expected, err)
+		if tc.expected == nil && err != nil {
+			t.Errorf("expected error in nil, when error returned: %v", err)
+		} else if tc.expected != nil && !tc.expected.Equals(*err) {
+			t.Errorf("remove error check failed\nexpected type: %v\ngot type: %v\nexpected reason: %v\ngot reason: %v",
+				tc.expected.Errtype, err.Errtype, tc.expected.Reason, err.Reason)
 		}
 	}
 }
@@ -159,13 +165,13 @@ func TestUpdate(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("resource with given brand and name not found"),
+				err: switches.ErrNoSwitch,
 			},
 		},
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return nil, fmt.Errorf("test")
+					return nil, errTest
 				},
 			},
 			in: struct {
@@ -182,13 +188,13 @@ func TestUpdate(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("test"),
+				err: errTest,
 			},
 		},
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return intptr(123), fmt.Errorf("test")
+					return intptr(123), errTest
 				},
 			},
 			in: struct {
@@ -205,7 +211,7 @@ func TestUpdate(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("test"),
+				err: errTest,
 			},
 		},
 		{
@@ -240,7 +246,7 @@ func TestUpdate(t *testing.T) {
 					return intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
-					return nil, fmt.Errorf("test")
+					return nil, errTest
 				},
 			},
 			in: struct {
@@ -257,7 +263,7 @@ func TestUpdate(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("test"),
+				err: errTest,
 			},
 		},
 		{
@@ -266,7 +272,7 @@ func TestUpdate(t *testing.T) {
 					return intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
-					return &models.SwitchEntity{Name: "tst"}, fmt.Errorf("test")
+					return &models.SwitchEntity{Name: "tst"}, errTest
 				},
 			},
 			in: struct {
@@ -283,7 +289,7 @@ func TestUpdate(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("test"),
+				err: errTest,
 			},
 		},
 		{
@@ -318,7 +324,7 @@ func TestUpdate(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.Update(tc.in.brand, tc.in.name, tc.in.body)
 
-		if !reflect.DeepEqual(tc.expected.err, err) {
+		if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
 			t.Errorf("Update error check failed\nexpected %v\ngot %v", tc.expected.err, err)
 		}
 		if !reflect.DeepEqual(tc.expected.res, res) {
@@ -348,13 +354,13 @@ func TestAddNew(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("switch with brand 'testb' and name 'testn' already exists"),
+				err: switches.ErrAlreadyExists,
 			},
 		},
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return nil, fmt.Errorf("test")
+					return nil, errTest
 				},
 			},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
@@ -363,25 +369,7 @@ func TestAddNew(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("test"),
-			},
-		},
-		{
-			repo: fakeRepo{
-				getID: func(s1, s2 string) (*int, error) {
-					return nil, nil
-				},
-				addNewAction: func(se models.SwitchEntity) (*int, error) {
-					return intptr(123), fmt.Errorf("test")
-				},
-			},
-			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
-			expected: struct {
-				res *int
-				err error
-			}{
-				res: nil,
-				err: fmt.Errorf("test"),
+				err: errTest,
 			},
 		},
 		{
@@ -390,7 +378,7 @@ func TestAddNew(t *testing.T) {
 					return nil, nil
 				},
 				addNewAction: func(se models.SwitchEntity) (*int, error) {
-					return nil, fmt.Errorf("test")
+					return intptr(123), errTest
 				},
 			},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
@@ -399,7 +387,25 @@ func TestAddNew(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("test"),
+				err: errTest,
+			},
+		},
+		{
+			repo: fakeRepo{
+				getID: func(s1, s2 string) (*int, error) {
+					return nil, nil
+				},
+				addNewAction: func(se models.SwitchEntity) (*int, error) {
+					return nil, errTest
+				},
+			},
+			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
+			expected: struct {
+				res *int
+				err error
+			}{
+				res: nil,
+				err: errTest,
 			},
 		},
 		{
@@ -444,7 +450,7 @@ func TestAddNew(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.AddNew(tc.reqbody)
 
-		if !reflect.DeepEqual(tc.expected.err, err) {
+		if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
 			t.Errorf("AddNew error check failed\nexpected %v\ngot %v", tc.expected.err, err)
 		}
 		if !reflect.DeepEqual(tc.expected.res, res) {
@@ -466,7 +472,7 @@ func TestGetSingle(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getSingleReturner: func(int) (*models.SwitchEntity, error) {
-					return nil, fmt.Errorf("test")
+					return nil, errTest
 				},
 				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil }},
 			expected: struct {
@@ -474,7 +480,7 @@ func TestGetSingle(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("test"),
+				err: errTest,
 			},
 		},
 		{
@@ -495,7 +501,7 @@ func TestGetSingle(t *testing.T) {
 		},
 		{
 			repo: fakeRepo{getID: func(s1, s2 string) (*int, error) {
-				return nil, fmt.Errorf("test error from exists()")
+				return nil, errTest
 			}},
 			brand: "",
 			name:  "",
@@ -504,7 +510,7 @@ func TestGetSingle(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("test error from exists()"),
+				err: errTest,
 			},
 		},
 		{
@@ -523,7 +529,7 @@ func TestGetSingle(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("given combination of brand and name not found"),
+				err: switches.ErrNoSwitch,
 			},
 		},
 		{
@@ -542,7 +548,7 @@ func TestGetSingle(t *testing.T) {
 				err error
 			}{
 				res: nil,
-				err: fmt.Errorf("given combination of brand and name not found"),
+				err: switches.ErrNoSwitch,
 			},
 		},
 		{
@@ -570,7 +576,7 @@ func TestGetSingle(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.GetSingle(tc.brand, tc.name)
 
-		if !reflect.DeepEqual(tc.expected.err, err) {
+		if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
 			t.Errorf("GetSingle error check failed\nexpected %v\ngot %v", tc.expected.err, err)
 		}
 		if !reflect.DeepEqual(tc.expected.res, res) {
@@ -590,7 +596,7 @@ func TestGetAll(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getAllReturner: func() ([]models.SwitchEntity, error) {
-					return nil, fmt.Errorf("test")
+					return nil, errTest
 				},
 			},
 			expected: struct {
@@ -598,7 +604,7 @@ func TestGetAll(t *testing.T) {
 				err error
 			}{
 				res: []models.Switch{},
-				err: fmt.Errorf("test"),
+				err: errTest,
 			},
 		},
 		{
@@ -612,7 +618,7 @@ func TestGetAll(t *testing.T) {
 				err error
 			}{
 				res: []models.Switch{
-					models.Switch{Name: "testname", Brand: "idkbrand"},
+					{Name: "testname", Brand: "idkbrand"},
 				},
 				err: nil,
 			},
@@ -651,7 +657,7 @@ func TestGetAll(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.GetAll()
 
-		if !reflect.DeepEqual(tc.expected.err, err) {
+		if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
 			t.Errorf("GetAll error check failed\nexpected %v\ngot %v", tc.expected.err, err)
 		}
 		if !reflect.DeepEqual(tc.expected.res, res) {

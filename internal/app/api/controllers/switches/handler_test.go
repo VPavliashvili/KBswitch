@@ -37,7 +37,7 @@ type fakeService struct {
 	pluralReturner     func() ([]models.Switch, error)
 	singleReturner     func(string, string) (*models.Switch, error)
 	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
-	deleteSwitchAction func(string, string) error
+	deleteSwitchAction func(string, string) *models.AppError
 	updateSwitchAction func(string, string, models.SwitchRequestBody) (*models.Switch, error)
 }
 
@@ -45,7 +45,7 @@ func (f fakeService) Update(brand, name string, m models.SwitchRequestBody) (*mo
 	return f.updateSwitchAction(brand, name, m)
 }
 
-func (f fakeService) Remove(brand, name string) error {
+func (f fakeService) Remove(brand, name string) *models.AppError {
 	return f.deleteSwitchAction(brand, name)
 }
 
@@ -612,8 +612,9 @@ func TestHandleSwitchRemove(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{deleteSwitchAction: func(brand, name string) error {
-				return fmt.Errorf("tst")
+			service: fakeService{deleteSwitchAction: func(brand, name string) *models.AppError {
+				e := models.NewError(models.ErrInternalServer, "tst")
+				return &e
 			}},
 			w: &fakeWriter{},
 			req: func() *http.Request {
@@ -628,14 +629,14 @@ func TestHandleSwitchRemove(t *testing.T) {
 				headerStatus int
 			}{
 				data: models.APIError{
-					Status:  http.StatusNotFound,
+					Status:  http.StatusInternalServerError,
 					Message: "tst",
 				}.Error(),
-				headerStatus: http.StatusNotFound,
+				headerStatus: http.StatusInternalServerError,
 			},
 		},
 		{
-			service: fakeService{deleteSwitchAction: func(s1, s2 string) error {
+			service: fakeService{deleteSwitchAction: func(s1, s2 string) *models.AppError {
 				return nil
 			}},
 			w: &fakeWriter{},

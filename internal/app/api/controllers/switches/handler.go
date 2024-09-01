@@ -141,7 +141,9 @@ func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
 
 	err := c.service.Remove(brand, name)
 	if err != nil {
-		writeErr(err.Error(), http.StatusNotFound, w)
+		e := models.ToAPIErr(*err)
+		w.WriteHeader(e.Status)
+		fmt.Fprint(w, e.Error())
 		return
 	}
 
