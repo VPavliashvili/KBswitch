@@ -10,7 +10,7 @@ type Service interface {
 	GetSingle(string, string) (*models.Switch, *common.AppError)
 	AddNew(models.SwitchRequestBody) (*int, *common.AppError)
 	Remove(string, string) *common.AppError
-	Update(brand, name string, body models.SwitchRequestBody) (*models.Switch, error)
+	Update(brand, name string, body models.SwitchRequestBody) (*models.Switch, *common.AppError)
 }
 
 type Repo interface {

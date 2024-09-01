@@ -38,6 +38,11 @@ func NewError(errtype error, reason string) AppError {
 	}
 }
 
+func Wrap(err error) *AppError {
+	e := NewError(ErrInternalServer, err.Error())
+	return &e
+}
+
 func ToAPIErr(err AppError) APIError {
 	var status int
 	switch err.Errtype {

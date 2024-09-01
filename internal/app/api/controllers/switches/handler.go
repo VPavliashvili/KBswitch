@@ -206,7 +206,9 @@ func (c controller) HandleSwitchUpdate(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := c.service.Update(brand, name, req)
 	if err != nil {
-		writeErr(err.Error(), http.StatusInternalServerError, w)
+		e := common.ToAPIErr(*err)
+		w.WriteHeader(e.Status)
+		fmt.Fprint(w, e.Error())
 		return
 	}
 	j, _ := json.Marshal(AsDTO(*resp))

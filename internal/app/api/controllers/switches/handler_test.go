@@ -2,7 +2,6 @@ package switches_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"kbswitch/internal/app/api/controllers/switches"
 	"kbswitch/internal/core/common"
 	"kbswitch/internal/core/switches/models"
@@ -39,10 +38,10 @@ type fakeService struct {
 	singleReturner     func(string, string) (*models.Switch, *common.AppError)
 	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, *common.AppError)
 	deleteSwitchAction func(string, string) *common.AppError
-	updateSwitchAction func(string, string, models.SwitchRequestBody) (*models.Switch, error)
+	updateSwitchAction func(string, string, models.SwitchRequestBody) (*models.Switch, *common.AppError)
 }
 
-func (f fakeService) Update(brand, name string, m models.SwitchRequestBody) (*models.Switch, error) {
+func (f fakeService) Update(brand, name string, m models.SwitchRequestBody) (*models.Switch, *common.AppError) {
 	return f.updateSwitchAction(brand, name, m)
 }
 
@@ -202,8 +201,9 @@ func TestHandleSwitchUpdate(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{updateSwitchAction: func(string, string, models.SwitchRequestBody) (*models.Switch, error) {
-				return nil, fmt.Errorf("tst")
+			service: fakeService{updateSwitchAction: func(string, string, models.SwitchRequestBody) (*models.Switch, *common.AppError) {
+				e := common.NewError(common.ErrBadRequest, "tst")
+				return nil, &e
 			}},
 			w: &fakeWriter{},
 			req: func() *http.Request {
@@ -221,14 +221,14 @@ func TestHandleSwitchUpdate(t *testing.T) {
 				headerStatus int
 			}{
 				data: common.APIError{
-					Status:  http.StatusInternalServerError,
+					Status:  http.StatusBadRequest,
 					Message: "tst",
 				}.Error(),
-				headerStatus: http.StatusInternalServerError,
+				headerStatus: http.StatusBadRequest,
 			},
 		},
 		{
-			service: fakeService{updateSwitchAction: func(string, string, models.SwitchRequestBody) (*models.Switch, error) {
+			service: fakeService{updateSwitchAction: func(string, string, models.SwitchRequestBody) (*models.Switch, *common.AppError) {
 				return &models.Switch{Name: "test"}, nil
 			}},
 			w: &fakeWriter{},

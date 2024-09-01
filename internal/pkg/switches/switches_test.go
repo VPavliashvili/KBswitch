@@ -2,7 +2,6 @@ package switches_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"kbswitch/internal/core/common"
 	"kbswitch/internal/core/switches/models"
@@ -104,7 +103,7 @@ func TestRemove(t *testing.T) {
 			},
 			brand:    "test",
 			name:     "test",
-			expected: switches.Wrap(errTest),
+			expected: common.Wrap(errTest),
 		},
 		{
 			repo: fakeRepo{
@@ -114,7 +113,7 @@ func TestRemove(t *testing.T) {
 			},
 			brand:    "test",
 			name:     "test",
-			expected: switches.Wrap(errTest),
+			expected: common.Wrap(errTest),
 		},
 		{
 			repo: fakeRepo{
@@ -127,7 +126,7 @@ func TestRemove(t *testing.T) {
 			},
 			brand:    "test",
 			name:     "test",
-			expected: switches.Wrap(errTest),
+			expected: common.Wrap(errTest),
 		},
 		{
 			repo: fakeRepo{
@@ -162,7 +161,7 @@ func TestUpdate(t *testing.T) {
 		}
 		expected struct {
 			res *models.Switch
-			err error
+			err *common.AppError
 		}
 	}{
 		{
@@ -182,10 +181,10 @@ func TestUpdate(t *testing.T) {
 			},
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: switches.ErrNoSwitch,
+				err: &switches.ErrNoSwitch,
 			},
 		},
 		{
@@ -205,10 +204,10 @@ func TestUpdate(t *testing.T) {
 			},
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -228,10 +227,10 @@ func TestUpdate(t *testing.T) {
 			},
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -254,7 +253,7 @@ func TestUpdate(t *testing.T) {
 			},
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
 				err: nil,
@@ -280,10 +279,10 @@ func TestUpdate(t *testing.T) {
 			},
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -306,10 +305,10 @@ func TestUpdate(t *testing.T) {
 			},
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: nil,
-				err: errTest,
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -332,7 +331,7 @@ func TestUpdate(t *testing.T) {
 			},
 			expected: struct {
 				res *models.Switch
-				err error
+				err *common.AppError
 			}{
 				res: &models.Switch{Name: "tst"},
 				err: nil,
@@ -344,12 +343,14 @@ func TestUpdate(t *testing.T) {
 		unit := switches.New(tc.repo)
 		res, err := unit.Update(tc.in.brand, tc.in.name, tc.in.body)
 
-		if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
-			t.Errorf("Update error check failed\nexpected %v\ngot %v", tc.expected.err, err)
-		}
-		if !reflect.DeepEqual(tc.expected.res, res) {
-			t.Errorf("Update result check failed\nexpected %v\ngot %v", tc.expected.res, res)
-		}
+		assertErrorsEqual("Update", t, tc.expected.err, err)
+		assertResultsEqual("Update", t, tc.expected.res, res)
+		// if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
+		// 	t.Errorf("Update error check failed\nexpected %v\ngot %v", tc.expected.err, err)
+		// }
+		// if !reflect.DeepEqual(tc.expected.res, res) {
+		// 	t.Errorf("Update result check failed\nexpected %v\ngot %v", tc.expected.res, res)
+		// }
 	}
 }
 
@@ -389,7 +390,7 @@ func TestAddNew(t *testing.T) {
 				err *common.AppError
 			}{
 				res: nil,
-				err: switches.Wrap(errTest),
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -407,7 +408,7 @@ func TestAddNew(t *testing.T) {
 				err *common.AppError
 			}{
 				res: nil,
-				err: switches.Wrap(errTest),
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -425,7 +426,7 @@ func TestAddNew(t *testing.T) {
 				err *common.AppError
 			}{
 				res: nil,
-				err: switches.Wrap(errTest),
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -496,7 +497,7 @@ func TestGetSingle(t *testing.T) {
 				err *common.AppError
 			}{
 				res: nil,
-				err: switches.Wrap(errTest),
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -526,7 +527,7 @@ func TestGetSingle(t *testing.T) {
 				err *common.AppError
 			}{
 				res: nil,
-				err: switches.Wrap(errTest),
+				err: common.Wrap(errTest),
 			},
 		},
 		{
@@ -616,7 +617,7 @@ func TestGetAll(t *testing.T) {
 				err *common.AppError
 			}{
 				res: []models.Switch{},
-				err: switches.Wrap(errTest),
+				err: common.Wrap(errTest),
 			},
 		},
 		{
