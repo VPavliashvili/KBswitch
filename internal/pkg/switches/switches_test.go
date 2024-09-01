@@ -3,6 +3,7 @@ package switches_test
 import (
 	"errors"
 	"fmt"
+	"kbswitch/internal/core/common"
 	"kbswitch/internal/core/switches/models"
 	"kbswitch/internal/pkg/switches"
 	"reflect"
@@ -59,7 +60,7 @@ func TestRemove(t *testing.T) {
 		repo     fakeRepo
 		brand    string
 		name     string
-		expected *models.AppError
+		expected *common.AppError
 	}{
 		{
 			repo: fakeRepo{

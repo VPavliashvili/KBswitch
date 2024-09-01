@@ -1,17 +1,18 @@
 package switches
 
 import (
+	"kbswitch/internal/core/common"
 	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
 )
 
 var (
-	ErrNoSwitch      = models.NewError(models.ErrNotFound, "resource with given brand and name not found")
-	ErrAlreadyExists = models.NewError(models.ErrBadRequest, "switch with given brand and name already exist")
+	ErrNoSwitch      = common.NewError(common.ErrNotFound, "resource with given brand and name not found")
+	ErrAlreadyExists = common.NewError(common.ErrBadRequest, "switch with given brand and name already exist")
 )
 
-func Wrap(err error) *models.AppError {
-	e := models.NewError(models.ErrInternalServer, err.Error())
+func Wrap(err error) *common.AppError {
+	e := common.NewError(common.ErrInternalServer, err.Error())
 	return &e
 }
 
@@ -65,7 +66,7 @@ func (s service) Update(brand, name string, body models.SwitchRequestBody) (*mod
 	return &res, nil
 }
 
-func (s service) Remove(brand, name string) *models.AppError {
+func (s service) Remove(brand, name string) *common.AppError {
 	switchID, err := s.repo.GetID(brand, name)
 	if err != nil {
 		return Wrap(err)

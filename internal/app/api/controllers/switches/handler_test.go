@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"kbswitch/internal/app/api/controllers/switches"
+	"kbswitch/internal/core/common"
 	"kbswitch/internal/core/switches/models"
 	"net/http"
 	"strings"
@@ -37,7 +38,7 @@ type fakeService struct {
 	pluralReturner     func() ([]models.Switch, error)
 	singleReturner     func(string, string) (*models.Switch, error)
 	addSwitchAction    func(reqbody models.SwitchRequestBody) (*int, error)
-	deleteSwitchAction func(string, string) *models.AppError
+	deleteSwitchAction func(string, string) *common.AppError
 	updateSwitchAction func(string, string, models.SwitchRequestBody) (*models.Switch, error)
 }
 
@@ -45,7 +46,7 @@ func (f fakeService) Update(brand, name string, m models.SwitchRequestBody) (*mo
 	return f.updateSwitchAction(brand, name, m)
 }
 
-func (f fakeService) Remove(brand, name string) *models.AppError {
+func (f fakeService) Remove(brand, name string) *common.AppError {
 	return f.deleteSwitchAction(brand, name)
 }
 
@@ -87,7 +88,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "invalid request model",
 				}.Error(),
@@ -109,7 +110,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "request body is entirely missing/nil",
 				}.Error(),
@@ -130,7 +131,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Message: "request parameters 'name' and 'brand' are missing",
 					Status:  http.StatusBadRequest,
 				}.Error(),
@@ -151,7 +152,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "request parameter 'name' is missing",
 				}.Error(),
@@ -172,7 +173,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "request parameter 'brand' is missing",
 				}.Error(),
@@ -193,7 +194,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "request parameter 'brand' is missing",
 				}.Error(),
@@ -219,7 +220,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusInternalServerError,
 					Message: "tst",
 				}.Error(),
@@ -326,7 +327,7 @@ func TestHandleSwitches(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusInternalServerError,
 					Message: "tst",
 				}.Error(),
@@ -361,7 +362,7 @@ func TestHandleSwitches(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Message: "collection got nil from a service",
 					Status:  http.StatusInternalServerError,
 				}.Error(),
@@ -401,7 +402,7 @@ func TestHandleSingleSwitch(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Message: "request parameters 'name' and 'brand' are missing",
 					Status:  http.StatusBadRequest,
 				}.Error(),
@@ -421,7 +422,7 @@ func TestHandleSingleSwitch(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Message: "request parameter 'brand' is missing",
 					Status:  http.StatusBadRequest,
 				}.Error(),
@@ -441,7 +442,7 @@ func TestHandleSingleSwitch(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "request parameter 'name' is missing",
 				}.Error(),
@@ -464,7 +465,7 @@ func TestHandleSingleSwitch(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusNotFound,
 					Message: "no resource found for a given name and brand",
 				}.Error(),
@@ -487,7 +488,7 @@ func TestHandleSingleSwitch(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusInternalServerError,
 					Message: "tst",
 				}.Error(),
@@ -562,7 +563,7 @@ func TestHandleSwitchRemove(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Message: "request parameters 'name' and 'brand' are missing",
 					Status:  http.StatusBadRequest,
 				}.Error(),
@@ -583,7 +584,7 @@ func TestHandleSwitchRemove(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "request parameter 'name' is missing",
 				}.Error(),
@@ -604,7 +605,7 @@ func TestHandleSwitchRemove(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "request parameter 'brand' is missing",
 				}.Error(),
@@ -612,8 +613,8 @@ func TestHandleSwitchRemove(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{deleteSwitchAction: func(brand, name string) *models.AppError {
-				e := models.NewError(models.ErrInternalServer, "tst")
+			service: fakeService{deleteSwitchAction: func(brand, name string) *common.AppError {
+				e := common.NewError(common.ErrInternalServer, "tst")
 				return &e
 			}},
 			w: &fakeWriter{},
@@ -628,7 +629,7 @@ func TestHandleSwitchRemove(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusInternalServerError,
 					Message: "tst",
 				}.Error(),
@@ -636,7 +637,7 @@ func TestHandleSwitchRemove(t *testing.T) {
 			},
 		},
 		{
-			service: fakeService{deleteSwitchAction: func(s1, s2 string) *models.AppError {
+			service: fakeService{deleteSwitchAction: func(s1, s2 string) *common.AppError {
 				return nil
 			}},
 			w: &fakeWriter{},
@@ -692,7 +693,7 @@ func TestHandleSwitchAdd(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "invalid request model", // entirelly missing body
 				}.Error(),
@@ -712,7 +713,7 @@ func TestHandleSwitchAdd(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusBadRequest,
 					Message: "invalid request model", // wrong structure request body
 				}.Error(),
@@ -738,7 +739,7 @@ func TestHandleSwitchAdd(t *testing.T) {
 				data         string
 				headerStatus int
 			}{
-				data: models.APIError{
+				data: common.APIError{
 					Status:  http.StatusInternalServerError,
 					Message: "tst",
 				}.Error(),

@@ -1,12 +1,15 @@
 package switches
 
-import "kbswitch/internal/core/switches/models"
+import (
+	"kbswitch/internal/core/common"
+	"kbswitch/internal/core/switches/models"
+)
 
 type Service interface {
 	GetAll() ([]models.Switch, error)
 	GetSingle(string, string) (*models.Switch, error)
 	AddNew(models.SwitchRequestBody) (*int, error)
-	Remove(string, string) *models.AppError
+	Remove(string, string) *common.AppError
 	Update(brand, name string, body models.SwitchRequestBody) (*models.Switch, error)
 }
 

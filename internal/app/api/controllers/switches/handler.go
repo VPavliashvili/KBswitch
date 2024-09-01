@@ -3,6 +3,7 @@ package switches
 import (
 	"encoding/json"
 	"fmt"
+	"kbswitch/internal/core/common"
 	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
 	"net/http"
@@ -19,7 +20,7 @@ func New(service switches.Service) controller {
 }
 
 func writeErr(err string, status int, w http.ResponseWriter) {
-	e := models.APIError{
+	e := common.APIError{
 		Status:  status,
 		Message: err,
 	}
@@ -141,7 +142,7 @@ func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
 
 	err := c.service.Remove(brand, name)
 	if err != nil {
-		e := models.ToAPIErr(*err)
+		e := common.ToAPIErr(*err)
 		w.WriteHeader(e.Status)
 		fmt.Fprint(w, e.Error())
 		return
