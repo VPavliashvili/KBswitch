@@ -291,7 +291,7 @@ func TestUpdate(t *testing.T) {
 					return intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
-					return &models.SwitchEntity{Name: "tst"}, errTest
+					return &models.SwitchEntity{Model: "tst"}, errTest
 				},
 			},
 			in: struct {
@@ -317,7 +317,7 @@ func TestUpdate(t *testing.T) {
 					return intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
-					return &models.SwitchEntity{Name: "tst"}, nil
+					return &models.SwitchEntity{Model: "tst"}, nil
 				},
 			},
 			in: struct {
@@ -345,12 +345,6 @@ func TestUpdate(t *testing.T) {
 
 		assertErrorsEqual("Update", t, tc.expected.err, err)
 		assertResultsEqual("Update", t, tc.expected.res, res)
-		// if (tc.expected.err == nil && err != nil) || (tc.expected.err != nil && !errors.Is(tc.expected.err, err)) {
-		// 	t.Errorf("Update error check failed\nexpected %v\ngot %v", tc.expected.err, err)
-		// }
-		// if !reflect.DeepEqual(tc.expected.res, res) {
-		// 	t.Errorf("Update result check failed\nexpected %v\ngot %v", tc.expected.res, res)
-		// }
 	}
 }
 
@@ -571,7 +565,7 @@ func TestGetSingle(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getSingleReturner: func(int) (*models.SwitchEntity, error) {
-					return &models.SwitchEntity{Name: "name", Brand: "brand"}, nil
+					return &models.SwitchEntity{Model: "name", Manufacturer: "brand"}, nil
 				},
 				getID: func(s1, s2 string) (*int, error) {
 					return intptr(123), nil
@@ -623,7 +617,7 @@ func TestGetAll(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getAllReturner: func() ([]models.SwitchEntity, error) {
-					return []models.SwitchEntity{{Name: "testname", Brand: "idkbrand"}}, nil
+					return []models.SwitchEntity{{Model: "testname", Manufacturer: "idkbrand"}}, nil
 				},
 			},
 			expected: struct {

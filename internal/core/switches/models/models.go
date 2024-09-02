@@ -1,11 +1,11 @@
 package models
 
 type SwitchEntity struct {
-	Brand            string
+	Manufacturer     string
 	ActuationType    string
 	Lifespan         int //in millions
-	Name             string
-	Image            string
+	Model            string
+	Image            []byte
 	OperatingForce   int     // in gram-force(gf)
 	ActivationTravel float64 // in mm
 	TotalTravel      float64 // in mm

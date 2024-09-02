@@ -29,7 +29,19 @@ func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, *common.AppErro
 		return nil, &ErrAlreadyExists
 	}
 
-	entity := models.SwitchEntity(reqbody)
+	entity := models.SwitchEntity{
+		Manufacturer:     reqbody.Brand,
+		ActuationType:    reqbody.ActuationType,
+		Lifespan:         reqbody.Lifespan,
+		Model:             reqbody.Name,
+		Image:            []byte(reqbody.Image),
+		OperatingForce:   reqbody.OperatingForce,
+		ActivationTravel: reqbody.ActivationTravel,
+		TotalTravel:      reqbody.TotalTravel,
+		SoundProfile:     reqbody.SoundProfile,
+		TriggerMethod:    reqbody.TriggerMethod,
+		Profile:          reqbody.Profile,
+	}
 
 	resp, err := s.repo.AddNew(entity)
 	if err != nil {
@@ -48,7 +60,19 @@ func (s service) Update(brand, name string, body models.SwitchRequestBody) (*mod
 		return nil, &ErrNoSwitch
 	}
 
-	entity := models.SwitchEntity(body)
+	entity := models.SwitchEntity{
+		Manufacturer:     body.Brand,
+		ActuationType:    body.ActuationType,
+		Lifespan:         body.Lifespan,
+		Model:             body.Name,
+		Image:            []byte(body.Image),
+		OperatingForce:   body.OperatingForce,
+		ActivationTravel: body.ActivationTravel,
+		TotalTravel:      body.TotalTravel,
+		SoundProfile:     body.SoundProfile,
+		TriggerMethod:    body.TriggerMethod,
+		Profile:          body.Profile,
+	}
 	resp, err := s.repo.Update(*switchID, entity)
 	if err != nil {
 		return nil, common.Wrap(err)
@@ -57,7 +81,19 @@ func (s service) Update(brand, name string, body models.SwitchRequestBody) (*mod
 		return nil, nil
 	}
 
-	res := models.Switch(*resp)
+	res := models.Switch{
+		Brand:            resp.Manufacturer,
+		ActuationType:    resp.ActuationType,
+		Lifespan:         resp.Lifespan,
+		Name:             resp.Model,
+		Image:            string(resp.Image[:]),
+		OperatingForce:   resp.OperatingForce,
+		ActivationTravel: resp.ActivationTravel,
+		TotalTravel:      resp.TotalTravel,
+		SoundProfile:     resp.SoundProfile,
+		TriggerMethod:    resp.TriggerMethod,
+		Profile:          resp.Profile,
+	}
 
 	return &res, nil
 }
@@ -84,7 +120,19 @@ func (s service) GetAll() ([]models.Switch, *common.AppError) {
 	resp, err := s.repo.GetAll()
 
 	for _, item := range resp {
-		s := models.Switch(item)
+		s := models.Switch{
+			Brand:            item.Manufacturer,
+			ActuationType:    item.ActuationType,
+			Lifespan:         item.Lifespan,
+			Name:             item.Model,
+			Image:            string(item.Image[:]),
+			OperatingForce:   item.OperatingForce,
+			ActivationTravel: item.ActivationTravel,
+			TotalTravel:      item.TotalTravel,
+			SoundProfile:     item.SoundProfile,
+			TriggerMethod:    item.TriggerMethod,
+			Profile:          item.Profile,
+		}
 
 		res = append(res, s)
 	}
@@ -112,7 +160,19 @@ func (s service) GetSingle(brand, name string) (*models.Switch, *common.AppError
 	if resp == nil {
 		return nil, &ErrErrorMissing
 	}
-	res := models.Switch(*resp)
+	res := models.Switch{
+		Brand:            resp.Manufacturer,
+		ActuationType:    resp.ActuationType,
+		Lifespan:         resp.Lifespan,
+		Name:             resp.Model,
+		Image:            string(resp.Image[:]),
+		OperatingForce:   resp.OperatingForce,
+		ActivationTravel: resp.ActivationTravel,
+		TotalTravel:      resp.TotalTravel,
+		SoundProfile:     resp.SoundProfile,
+		TriggerMethod:    resp.TriggerMethod,
+		Profile:          resp.Profile,
+	}
 
 	return &res, nil
 }

@@ -25,3 +25,11 @@ type Config struct {
 	ReadTimeout  int
 	WriteTimeout int
 }
+
+type DbConfig struct {
+	User string
+	Pass string
+	Host string
+	Db   string
+	Port uint16
+}
