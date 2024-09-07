@@ -1,6 +1,7 @@
 package switches
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"kbswitch/internal/core/common"
@@ -38,8 +39,8 @@ func writeErr(err string, status int, w http.ResponseWriter) {
 //	@Success		200	{array}		SwitchDTO
 //	@Failure		500	{object}	common.APIError
 //	@Router			/api/switches [get]
-func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
-	resp, err := c.service.GetAll()
+func (c controller) HandleSwitches(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	resp, err := c.service.GetAll(ctx)
 	if err != nil {
 		e := common.ToAPIErr(*err)
 		w.WriteHeader(e.Status)
@@ -78,7 +79,7 @@ func (c controller) HandleSwitches(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	{object}	common.APIError
 //	@Failure		404	{object}	common.APIError
 //	@Router			/api/switches/{brand}/{name} [get]
-func (c controller) HandleSingleSwitch(w http.ResponseWriter, r *http.Request) {
+func (c controller) HandleSingleSwitch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	brand := r.PathValue("brand")
 	name := r.PathValue("name")
 	if brand == "" && name == "" {
@@ -97,7 +98,7 @@ func (c controller) HandleSingleSwitch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := c.service.GetSingle(brand, name)
+	resp, err := c.service.GetSingle(ctx, brand, name)
 	if err != nil {
 		e := common.ToAPIErr(*err)
 		w.WriteHeader(e.Status)
@@ -130,7 +131,7 @@ func (c controller) HandleSingleSwitch(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	{object}	common.APIError
 //	@Failure		404	{object}	common.APIError
 //	@Router			/api/switches/{brand}/{name} [delete]
-func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
+func (c controller) HandleSwitchRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	brand := r.PathValue("brand")
 	name := r.PathValue("name")
 	if brand == "" || name == "" {
@@ -144,7 +145,7 @@ func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := c.service.Remove(brand, name)
+	err := c.service.Remove(ctx, brand, name)
 	if err != nil {
 		e := common.ToAPIErr(*err)
 		w.WriteHeader(e.Status)
@@ -169,7 +170,7 @@ func (c controller) HandleSwitchRemove(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500		{object}	common.APIError
 //	@Failure		400		{object}	common.APIError
 //	@Router			/api/switches/{brand}/{name} [patch]
-func (c controller) HandleSwitchUpdate(w http.ResponseWriter, r *http.Request) {
+func (c controller) HandleSwitchUpdate(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	brand := r.PathValue("brand")
 	name := r.PathValue("name")
 	if brand == "" && name == "" {
@@ -204,7 +205,7 @@ func (c controller) HandleSwitchUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := c.service.Update(brand, name, req)
+	resp, err := c.service.Update(ctx, brand, name, req)
 	if err != nil {
 		e := common.ToAPIErr(*err)
 		w.WriteHeader(e.Status)
@@ -230,7 +231,7 @@ func (c controller) HandleSwitchUpdate(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500			{object}	common.APIError
 //	@Failure		400			{object}	common.APIError
 //	@Router			/api/switches [post]
-func (c controller) HandleSwitchAdd(w http.ResponseWriter, r *http.Request) {
+func (c controller) HandleSwitchAdd(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var req models.SwitchRequestBody
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
@@ -241,7 +242,7 @@ func (c controller) HandleSwitchAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, e := c.service.AddNew(req)
+	id, e := c.service.AddNew(ctx, req)
 	if e != nil {
 		e := common.ToAPIErr(*e)
 		w.WriteHeader(e.Status)

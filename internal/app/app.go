@@ -31,5 +31,5 @@ type DbConfig struct {
 	Pass string
 	Host string
 	Db   string
-	Port uint16
+	Port int
 }

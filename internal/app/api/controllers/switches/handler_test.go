@@ -1,6 +1,7 @@
 package switches_test
 
 import (
+	"context"
 	"encoding/json"
 	"kbswitch/internal/app/api/controllers/switches"
 	"kbswitch/internal/core/common"
@@ -41,23 +42,23 @@ type fakeService struct {
 	updateSwitchAction func(string, string, models.SwitchRequestBody) (*models.Switch, *common.AppError)
 }
 
-func (f fakeService) Update(brand, name string, m models.SwitchRequestBody) (*models.Switch, *common.AppError) {
+func (f fakeService) Update(ctx context.Context, brand, name string, m models.SwitchRequestBody) (*models.Switch, *common.AppError) {
 	return f.updateSwitchAction(brand, name, m)
 }
 
-func (f fakeService) Remove(brand, name string) *common.AppError {
+func (f fakeService) Remove(ctx context.Context, brand, name string) *common.AppError {
 	return f.deleteSwitchAction(brand, name)
 }
 
-func (f fakeService) AddNew(s models.SwitchRequestBody) (*int, *common.AppError) {
+func (f fakeService) AddNew(ctx context.Context, s models.SwitchRequestBody) (*int, *common.AppError) {
 	return f.addSwitchAction(s)
 }
 
-func (f fakeService) GetAll() ([]models.Switch, *common.AppError) {
+func (f fakeService) GetAll(ctx context.Context) ([]models.Switch, *common.AppError) {
 	return f.pluralReturner()
 }
 
-func (f fakeService) GetSingle(brand, name string) (*models.Switch, *common.AppError) {
+func (f fakeService) GetSingle(ctx context.Context, brand, name string) (*models.Switch, *common.AppError) {
 	return f.singleReturner(brand, name)
 }
 
@@ -262,7 +263,7 @@ func TestHandleSwitchUpdate(t *testing.T) {
 
 	for _, tc := range tcases {
 		handler := switches.New(tc.service)
-		handler.HandleSwitchUpdate(tc.w, tc.req)
+		handler.HandleSwitchUpdate(context.Background(), tc.w, tc.req)
 		if tc.expected.data != tc.w.input {
 			t.Errorf("HandleSwitchUpdate failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
 		}
@@ -374,7 +375,7 @@ func TestHandleSwitches(t *testing.T) {
 
 	for _, tc := range tcases {
 		handler := switches.New(tc.service)
-		handler.HandleSwitches(tc.w, nil)
+		handler.HandleSwitches(context.Background(), tc.w, nil)
 		if tc.expected.data != tc.w.input {
 			t.Errorf("HandleSwitches failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
 		}
@@ -536,7 +537,7 @@ func TestHandleSingleSwitch(t *testing.T) {
 
 	for _, tc := range tcases {
 		handler := switches.New(tc.service)
-		handler.HandleSingleSwitch(tc.w, tc.req)
+		handler.HandleSingleSwitch(context.Background(), tc.w, tc.req)
 		if tc.expected.data != tc.w.input {
 			t.Errorf("HandleSingleSwitch failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
 		}
@@ -662,7 +663,7 @@ func TestHandleSwitchRemove(t *testing.T) {
 
 	for _, tc := range tcases {
 		handler := switches.New(tc.service)
-		handler.HandleSwitchRemove(tc.w, tc.req)
+		handler.HandleSwitchRemove(context.Background(), tc.w, tc.req)
 		if tc.expected.data != tc.w.input {
 			t.Errorf("HandleSwitchRemove failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
 		}
@@ -780,7 +781,7 @@ func TestHandleSwitchAdd(t *testing.T) {
 
 	for _, tc := range tcases {
 		handler := switches.New(tc.service)
-		handler.HandleSwitchAdd(tc.w, tc.req)
+		handler.HandleSwitchAdd(context.Background(), tc.w, tc.req)
 		if tc.expected.data != tc.w.input {
 			t.Errorf("HandleSwitchAdd failed\nexpected %v\ngot %s", tc.expected.data, tc.w.input)
 		}

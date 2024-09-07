@@ -1,6 +1,7 @@
 package switches_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"kbswitch/internal/core/common"
@@ -49,32 +50,32 @@ type fakeRepo struct {
 }
 
 // Update implements repositories.SwitchesRepo.
-func (f fakeRepo) Update(id int, req models.SwitchEntity) (*models.SwitchEntity, error) {
+func (f fakeRepo) Update(ctx context.Context, id int, req models.SwitchEntity) (*models.SwitchEntity, error) {
 	return f.updateAction(id, req)
 }
 
 // Remove implements repositories.SwitchesRepo.
-func (f fakeRepo) Remove(id int) error {
+func (f fakeRepo) Remove(ctx context.Context, id int) error {
 	return f.removeAction(id)
 }
 
 // AddNew implements repositories.SwitchesRepo.
-func (f fakeRepo) AddNew(rb models.SwitchEntity) (*int, error) {
+func (f fakeRepo) AddNew(ctx context.Context, rb models.SwitchEntity) (*int, error) {
 	return f.addNewAction(rb)
 }
 
 // GetAll implements repositories.SwitchesRepo.
-func (f fakeRepo) GetAll() ([]models.SwitchEntity, error) {
+func (f fakeRepo) GetAll(ctx context.Context) ([]models.SwitchEntity, error) {
 	return f.getAllReturner()
 }
 
 // GetSingle implements repositories.SwitchesRepo.
-func (f fakeRepo) GetSingle(id int) (*models.SwitchEntity, error) {
+func (f fakeRepo) GetSingle(ctx context.Context, id int) (*models.SwitchEntity, error) {
 	return f.getSingleReturner(id)
 }
 
 // GetSingle implements repositories.SwitchesRepo.
-func (f fakeRepo) GetID(brand, name string) (*int, error) {
+func (f fakeRepo) GetID(ctx context.Context, brand, name string) (*int, error) {
 	return f.getID(brand, name)
 }
 
@@ -145,7 +146,7 @@ func TestRemove(t *testing.T) {
 
 	for _, tc := range tcases {
 		unit := switches.New(tc.repo)
-		err := unit.Remove(tc.brand, tc.name)
+		err := unit.Remove(context.Background(), tc.brand, tc.name)
 
 		assertErrorsEqual("Remove", t, tc.expected, err)
 	}
@@ -341,7 +342,7 @@ func TestUpdate(t *testing.T) {
 
 	for _, tc := range tcases {
 		unit := switches.New(tc.repo)
-		res, err := unit.Update(tc.in.brand, tc.in.name, tc.in.body)
+		res, err := unit.Update(context.Background(), tc.in.brand, tc.in.name, tc.in.body)
 
 		assertErrorsEqual("Update", t, tc.expected.err, err)
 		assertResultsEqual("Update", t, tc.expected.res, res)
@@ -463,7 +464,7 @@ func TestAddNew(t *testing.T) {
 
 	for _, tc := range tcases {
 		unit := switches.New(tc.repo)
-		res, err := unit.AddNew(tc.reqbody)
+		res, err := unit.AddNew(context.Background(), tc.reqbody)
 
 		assertErrorsEqual("AddNew", t, tc.expected.err, err)
 		assertResultsEqual("AddNew", t, tc.expected.res, res)
@@ -585,7 +586,7 @@ func TestGetSingle(t *testing.T) {
 
 	for _, tc := range tcases {
 		unit := switches.New(tc.repo)
-		res, err := unit.GetSingle(tc.brand, tc.name)
+		res, err := unit.GetSingle(context.Background(), tc.brand, tc.name)
 
 		assertErrorsEqual("GetSingle", t, tc.expected.err, err)
 		assertResultsEqual("GetSingle", t, tc.expected.res, res)
@@ -662,7 +663,7 @@ func TestGetAll(t *testing.T) {
 
 	for _, tc := range tcases {
 		unit := switches.New(tc.repo)
-		res, err := unit.GetAll()
+		res, err := unit.GetAll(context.Background())
 
 		assertErrorsEqual("GetAll", t, tc.expected.err, err)
 		assertResultsEqual("GetAll", t, tc.expected.res, res)

@@ -1,6 +1,7 @@
 package switches
 
 import (
+	"context"
 	"kbswitch/internal/core/common"
 	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
@@ -20,8 +21,8 @@ type service struct {
 	repo switches.Repo
 }
 
-func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, *common.AppError) {
-	switchID, err := s.repo.GetID(reqbody.Brand, reqbody.Name)
+func (s service) AddNew(ctx context.Context, reqbody models.SwitchRequestBody) (*int, *common.AppError) {
+	switchID, err := s.repo.GetID(ctx, reqbody.Brand, reqbody.Name)
 	if err != nil {
 		return nil, common.Wrap(err)
 	}
@@ -33,7 +34,7 @@ func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, *common.AppErro
 		Manufacturer:     reqbody.Brand,
 		ActuationType:    reqbody.ActuationType,
 		Lifespan:         reqbody.Lifespan,
-		Model:             reqbody.Name,
+		Model:            reqbody.Name,
 		Image:            []byte(reqbody.Image),
 		OperatingForce:   reqbody.OperatingForce,
 		ActivationTravel: reqbody.ActivationTravel,
@@ -43,7 +44,7 @@ func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, *common.AppErro
 		Profile:          reqbody.Profile,
 	}
 
-	resp, err := s.repo.AddNew(entity)
+	resp, err := s.repo.AddNew(ctx, entity)
 	if err != nil {
 		return nil, common.Wrap(err)
 	}
@@ -51,8 +52,8 @@ func (s service) AddNew(reqbody models.SwitchRequestBody) (*int, *common.AppErro
 	return resp, nil
 }
 
-func (s service) Update(brand, name string, body models.SwitchRequestBody) (*models.Switch, *common.AppError) {
-	switchID, err := s.repo.GetID(brand, name)
+func (s service) Update(ctx context.Context, brand, name string, body models.SwitchRequestBody) (*models.Switch, *common.AppError) {
+	switchID, err := s.repo.GetID(ctx, brand, name)
 	if err != nil {
 		return nil, common.Wrap(err)
 	}
@@ -64,7 +65,7 @@ func (s service) Update(brand, name string, body models.SwitchRequestBody) (*mod
 		Manufacturer:     body.Brand,
 		ActuationType:    body.ActuationType,
 		Lifespan:         body.Lifespan,
-		Model:             body.Name,
+		Model:            body.Name,
 		Image:            []byte(body.Image),
 		OperatingForce:   body.OperatingForce,
 		ActivationTravel: body.ActivationTravel,
@@ -73,7 +74,7 @@ func (s service) Update(brand, name string, body models.SwitchRequestBody) (*mod
 		TriggerMethod:    body.TriggerMethod,
 		Profile:          body.Profile,
 	}
-	resp, err := s.repo.Update(*switchID, entity)
+	resp, err := s.repo.Update(ctx, *switchID, entity)
 	if err != nil {
 		return nil, common.Wrap(err)
 	}
@@ -98,8 +99,8 @@ func (s service) Update(brand, name string, body models.SwitchRequestBody) (*mod
 	return &res, nil
 }
 
-func (s service) Remove(brand, name string) *common.AppError {
-	switchID, err := s.repo.GetID(brand, name)
+func (s service) Remove(ctx context.Context, brand, name string) *common.AppError {
+	switchID, err := s.repo.GetID(ctx, brand, name)
 	if err != nil {
 		return common.Wrap(err)
 	}
@@ -107,7 +108,7 @@ func (s service) Remove(brand, name string) *common.AppError {
 		return &ErrNoSwitch
 	}
 
-	err = s.repo.Remove(*switchID)
+	err = s.repo.Remove(ctx, *switchID)
 	if err != nil {
 		return common.Wrap(err)
 	}
@@ -115,9 +116,9 @@ func (s service) Remove(brand, name string) *common.AppError {
 	return nil
 }
 
-func (s service) GetAll() ([]models.Switch, *common.AppError) {
+func (s service) GetAll(ctx context.Context) ([]models.Switch, *common.AppError) {
 	res := []models.Switch{}
-	resp, err := s.repo.GetAll()
+	resp, err := s.repo.GetAll(ctx)
 
 	for _, item := range resp {
 		s := models.Switch{
@@ -143,8 +144,8 @@ func (s service) GetAll() ([]models.Switch, *common.AppError) {
 	return res, nil
 }
 
-func (s service) GetSingle(brand, name string) (*models.Switch, *common.AppError) {
-	switchID, err := s.repo.GetID(brand, name)
+func (s service) GetSingle(ctx context.Context, brand, name string) (*models.Switch, *common.AppError) {
+	switchID, err := s.repo.GetID(ctx, brand, name)
 
 	if err != nil {
 		return nil, common.Wrap(err)
@@ -153,7 +154,7 @@ func (s service) GetSingle(brand, name string) (*models.Switch, *common.AppError
 		return nil, &ErrNoSwitch
 	}
 
-	resp, err := s.repo.GetSingle(*switchID)
+	resp, err := s.repo.GetSingle(ctx, *switchID)
 	if err != nil {
 		return nil, common.Wrap(err)
 	}

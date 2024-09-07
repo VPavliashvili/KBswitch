@@ -35,23 +35,23 @@ func InitRouter(app app.Application) *router.CustomMux {
 			c := switches.New(app.Services.Switches)
 
 			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-				c.HandleSwitches(w, r)
+				c.HandleSwitches(r.Context(), w, r)
 			})
 
 			ng.HandleRouteFunc("GET /{brand}/{name}", func(w http.ResponseWriter, r *http.Request) {
-				c.HandleSingleSwitch(w, r)
+				c.HandleSingleSwitch(r.Context(), w, r)
 			})
 
 			ng.HandleRouteFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
-				c.HandleSwitchAdd(w, r)
+				c.HandleSwitchAdd(r.Context(), w, r)
 			})
 
 			ng.HandleRouteFunc("DELETE /{brand}/{name}", func(w http.ResponseWriter, r *http.Request) {
-				c.HandleSwitchRemove(w, r)
+				c.HandleSwitchRemove(r.Context(), w, r)
 			})
 
 			ng.HandleRouteFunc("PATCH /{brand}/{name}", func(w http.ResponseWriter, r *http.Request) {
-				c.HandleSwitchUpdate(w, r)
+				c.HandleSwitchUpdate(r.Context(), w, r)
 			})
 		})
 
