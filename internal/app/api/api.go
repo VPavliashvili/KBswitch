@@ -10,6 +10,9 @@ import (
 	"kbswitch/internal/app/api/controllers/system"
 	"kbswitch/internal/app/api/middlewares"
 	"kbswitch/internal/app/api/router"
+	"kbswitch/internal/app/database"
+	switchservice "kbswitch/internal/pkg/switches"
+	"kbswitch/internal/pkg/switches/repo"
 
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -22,7 +25,8 @@ func InitRouter(app app.Application) *router.CustomMux {
 
 	router := router.CreateAndSetup(func(this *router.CustomMux) *router.CustomMux {
 		this.Use(middlewares.ContentTypeJSON)
-		this.Use(middlewares.Timeout)
+		this.Use(middlewares.Timeout((app.Config.Timeout)))
+		this.Use(middlewares.InitPgxPool("switches", app.DbConfig))
 
 		this.AddGroup("/api/system/", func(ng *router.Group) {
 			c := system.New(app.BuildDate)
@@ -33,11 +37,13 @@ func InitRouter(app app.Application) *router.CustomMux {
 		})
 
 		this.AddGroup("/api/switches/", func(ng *router.Group) {
-			// this.Use(middlewares.InitPgxPool)
-
 			c := switches.New(app.Services.Switches)
 
 			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+				app.Repos.Switches = repo.New(r.Context(), database.Get("switches"), app.DbConfig)
+				app.Services.Switches = switchservice.New(app.Repos.Switches)
+				c = switches.New(app.Services.Switches)
+
 				c.HandleSwitches(r.Context(), w, r)
 			})
 

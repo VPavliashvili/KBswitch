@@ -13,36 +13,35 @@ import (
 var compileDate string
 
 func main() {
-	compTime, err := time.Parse(time.RFC3339, compileDate)
+	bd, err := time.Parse(time.RFC3339, compileDate)
 	if err != nil {
 		panic("could not parse build time\n" + err.Error())
 	}
 
 	// config part will be separated out to the config
-	app := app.Application{
+	a := app.Application{
 		Config: app.Config{
-			Port:         6012,
-			ReadTimeout:  5,
-			WriteTimeout: 5,
+			Port:    6012,
+			Timeout: 10,
 		},
-		BuildDate: compTime,
-		Repos: app.InjectedRepos{
-			Switches: nil, // after writing real implementation gotta create the instance here
+		DbConfig: app.DbConfig{
+			User: "admin",
+			Pass: "test",
+			Host: "database_switches",
+			Db:   "switches_store",
+			Port: 5432,
 		},
-		Services: app.InjectedServices{
-			Switches: nil, // after writing real implementation gotta create the instance here
-		},
+		BuildDate: bd,
 	}
+	// app.App = a
 
 	fmt.Printf("APPLICATION STARTED\n")
 
-	router := api.InitRouter(app)
+	router := api.InitRouter(a)
 
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", app.Config.Port),
-		Handler:      router,
-		ReadTimeout:  time.Duration(app.Config.ReadTimeout) * time.Second,
-		WriteTimeout: time.Duration(app.Config.WriteTimeout) * time.Second,
+		Addr:    fmt.Sprintf(":%d", a.Config.Port),
+		Handler: router,
 	}
 
 	server.ListenAndServe()

@@ -6,7 +6,7 @@ import (
 )
 
 // state of the application, is singleton
-var App Application
+// var App Application
 
 type Application struct {
 	Config    Config
@@ -25,9 +25,8 @@ type InjectedServices struct {
 }
 
 type Config struct {
-	Port         int
-	ReadTimeout  int
-	WriteTimeout int
+	Timeout int
+	Port    int
 }
 
 type DbConfig struct {

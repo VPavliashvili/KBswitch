@@ -1,6 +1,7 @@
 package models
 
 type SwitchEntity struct {
+	ID               int
 	Manufacturer     string
 	ActuationType    string
 	Lifespan         int //in millions
