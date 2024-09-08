@@ -5,8 +5,12 @@ import (
 	"time"
 )
 
+// state of the application, is singleton
+var App Application
+
 type Application struct {
 	Config    Config
+	DbConfig  DbConfig
 	BuildDate time.Time
 	Repos     InjectedRepos
 	Services  InjectedServices

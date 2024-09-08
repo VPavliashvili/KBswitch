@@ -18,10 +18,11 @@ func InitRouter(app app.Application) *router.CustomMux {
 
 	docs.SwaggerInfo.Title = "Keyboard switches registry API"
 	docs.SwaggerInfo.Description = "This is a backend of upcoming website"
-	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Version = "0.0.1"
 
 	router := router.CreateAndSetup(func(this *router.CustomMux) *router.CustomMux {
 		this.Use(middlewares.ContentTypeJSON)
+		this.Use(middlewares.Timeout)
 
 		this.AddGroup("/api/system/", func(ng *router.Group) {
 			c := system.New(app.BuildDate)
@@ -32,6 +33,8 @@ func InitRouter(app app.Application) *router.CustomMux {
 		})
 
 		this.AddGroup("/api/switches/", func(ng *router.Group) {
+			// this.Use(middlewares.InitPgxPool)
+
 			c := switches.New(app.Services.Switches)
 
 			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
