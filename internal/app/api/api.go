@@ -10,7 +10,7 @@ import (
 	"kbswitch/internal/app/api/controllers/system"
 	"kbswitch/internal/app/api/middlewares"
 	"kbswitch/internal/app/api/router"
-	"kbswitch/internal/app/database"
+	"kbswitch/internal/core/common/database"
 	switchservice "kbswitch/internal/pkg/switches"
 	"kbswitch/internal/pkg/switches/repo"
 
@@ -26,7 +26,7 @@ func InitRouter(app app.Application) *router.CustomMux {
 	router := router.CreateAndSetup(func(this *router.CustomMux) *router.CustomMux {
 		this.Use(middlewares.ContentTypeJSON)
 		this.Use(middlewares.Timeout((app.Config.Timeout)))
-		this.Use(middlewares.InitPgxPool("switches", app.DbConfig))
+		this.Use(middlewares.InitPgxPool(database.PoolKey.Switches, app.DbConfig))
 
 		this.AddGroup("/api/system/", func(ng *router.Group) {
 			c := system.New(app.BuildDate)
@@ -37,12 +37,13 @@ func InitRouter(app app.Application) *router.CustomMux {
 		})
 
 		this.AddGroup("/api/switches/", func(ng *router.Group) {
-			c := switches.New(app.Services.Switches)
+			c := switches.New(nil)
 
 			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-				app.Repos.Switches = repo.New(r.Context(), database.Get("switches"), app.DbConfig)
-				app.Services.Switches = switchservice.New(app.Repos.Switches)
-				c = switches.New(app.Services.Switches)
+				// similar to .net addscoped, new instances wil created on every api call
+				repo := repo.New(r.Context(), database.Get(database.PoolKey.Switches), app.DbConfig)
+				service := switchservice.New(repo)
+				c = switches.New(service)
 
 				c.HandleSwitches(r.Context(), w, r)
 			})

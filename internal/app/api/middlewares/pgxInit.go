@@ -3,13 +3,13 @@ package middlewares
 import (
 	"fmt"
 	"kbswitch/internal/app"
-	"kbswitch/internal/app/database"
+	"kbswitch/internal/core/common/database"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func InitPgxPool(key string, cfg app.DbConfig) func(http http.Handler) http.Handler {
+func InitPgxPool(key database.Key, cfg app.DbConfig) func(http http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Db)
