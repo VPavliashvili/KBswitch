@@ -21,5 +21,12 @@ services:
       - GOOSE_DRIVER=postgres
       - GOOSE_DBSTRING=host=database_switches user=admin dbname=switches_store sslmode=disable password=test
       - GOOSE_MIGRATION_DIR=./internal/migs
+      - APP_TIMEOUT=10
+      - APP_PORT=6012
+      - APP_DB_USER=admin
+      - APP_DB_PASS=test
+      - APP_DB_HOST=database_switches
+      - APP_DB_PORT=5432
+      - APP_DB=switches_store
     links:
         - db

@@ -17,6 +17,7 @@ RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 ENV PATH="${PATH}:$HOME/go/bin"
 ENV PATH="${PATH}:/usr/local/go/bin"
+ENV TZ="Asia/Tbilisi"
 
 COPY . .
 

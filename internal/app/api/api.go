@@ -41,7 +41,7 @@ func InitRouter(app app.Application) *router.CustomMux {
 
 			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 				// similar to .net addscoped, new instances wil created on every api call
-				repo := repo.New(r.Context(), database.Get(database.PoolKey.Switches), app.DbConfig)
+				repo := repo.New(r.Context(), database.Get(database.PoolKey.Switches))
 				service := switchservice.New(repo)
 				c = switches.New(service)
 

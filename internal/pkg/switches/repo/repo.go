@@ -2,20 +2,14 @@ package repo
 
 import (
 	"context"
-	"kbswitch/internal/app"
 	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func New(ctx context.Context, p *pgxpool.Pool, cfg app.DbConfig) switches.Repo {
+func New(ctx context.Context, p *pgxpool.Pool) switches.Repo {
 	return repo{
-		user: cfg.User,
-		pass: cfg.Pass,
-		host: cfg.Host,
-		db:   cfg.Db,
-		port: cfg.Port,
 		pool: p,
 	}
 }
@@ -35,11 +29,6 @@ func New(ctx context.Context, p *pgxpool.Pool, cfg app.DbConfig) switches.Repo {
 // }
 
 type repo struct {
-	user string
-	pass string
-	host string
-	db   string
-	port int
 	pool *pgxpool.Pool
 }
 
