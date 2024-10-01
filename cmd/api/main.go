@@ -6,6 +6,7 @@ import (
 
 	"kbswitch/internal/app"
 	"kbswitch/internal/app/api"
+	"kbswitch/internal/core/common/logger"
 )
 
 // this is provided from build args
@@ -13,8 +14,9 @@ var compileDate string
 
 func main() {
 	a := app.New(compileDate)
+	logger.Init(a)
 
-	fmt.Printf("APPLICATION STARTED\n")
+	logger.Info("APPLICATION STARTED\n")
 
 	router := api.InitRouter(a)
 

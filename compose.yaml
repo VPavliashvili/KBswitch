@@ -28,5 +28,7 @@ services:
       - APP_DB_HOST=database_switches
       - APP_DB_PORT=5432
       - APP_DB=switches_store
+      - LOG_ENABLE_CONSOLE=true
+      - LOG_PATH=./log.log
     links:
         - db

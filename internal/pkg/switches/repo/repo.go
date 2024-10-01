@@ -8,25 +8,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func New(ctx context.Context, p *pgxpool.Pool) switches.Repo {
+func New(p *pgxpool.Pool) switches.Repo {
 	return repo{
 		pool: p,
 	}
 }
-
-// func createPool(ctx context.Context, cfg app.DbConfig) (*pgxpool.Pool, error) {
-// 	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Db)
-//
-// 	var err error
-// 	pool, err := pgxpool.New(ctx, dbUrl)
-// 	if err != nil {
-// 		// logger.Fatal(fmt.Sprintf("FATAL when creating pgx pool -> %s", err.Error()))
-// 		err = fmt.Errorf("could not create pgx pool\n" + err.Error())
-// 		return nil, err
-// 	}
-//
-// 	return pool, nil
-// }
 
 type repo struct {
 	pool *pgxpool.Pool

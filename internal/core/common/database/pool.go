@@ -18,6 +18,7 @@ var PoolKey = struct {
 
 var pool = make(map[Key]*pgxpool.Pool)
 
+// appends a new pool with a given key
 func Append(k Key, p *pgxpool.Pool) {
 	_, exists := pool[k]
 	if !exists {
@@ -25,6 +26,7 @@ func Append(k Key, p *pgxpool.Pool) {
 	}
 }
 
+// gets pool by key
 func Get(k Key) *pgxpool.Pool {
 	p, exists := pool[k]
 	if exists {
@@ -33,6 +35,7 @@ func Get(k Key) *pgxpool.Pool {
 	panic(fmt.Sprintf("pool does not contain object with key: %s", k))
 }
 
+// checks database availability
 func Ping(ctx context.Context, k Key) error {
 	p := Get(k)
 	err := p.Ping(ctx)

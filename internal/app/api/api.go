@@ -27,6 +27,7 @@ func InitRouter(app app.Application) *router.CustomMux {
 		this.Use(middlewares.ContentTypeJSON)
 		this.Use(middlewares.Timeout((app.Config.Timeout)))
 		this.Use(middlewares.InitPgxPool(database.PoolKey.Switches, app.DbConfig))
+		this.Use(middlewares.Logging)
 
 		this.AddGroup("/api/system/", func(ng *router.Group) {
 			c := system.New(app.BuildDate)
@@ -41,7 +42,7 @@ func InitRouter(app app.Application) *router.CustomMux {
 
 			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 				// similar to .net addscoped, new instances wil created on every api call
-				repo := repo.New(r.Context(), database.Get(database.PoolKey.Switches))
+				repo := repo.New(database.Get(database.PoolKey.Switches))
 				service := switchservice.New(repo)
 				c = switches.New(service)
 
