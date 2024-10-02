@@ -27,6 +27,7 @@ func InitRouter(app app.Application) *router.CustomMux {
 		this.Use(middlewares.ContentTypeJSON)
 		this.Use(middlewares.Timeout((app.Config.Timeout)))
 		this.Use(middlewares.InitPgxPool(database.PoolKey.Switches, app.DbConfig))
+		this.Use(middlewares.RequestID)
 		this.Use(middlewares.Logging)
 
 		this.AddGroup("/api/system/", func(ng *router.Group) {

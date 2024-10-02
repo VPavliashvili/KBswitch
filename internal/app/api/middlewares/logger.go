@@ -12,5 +12,7 @@ func Logging(next http.Handler) http.Handler {
 			msg := logger.GetRequestResponseLog(rww, r)
 			logger.Info(msg)
 		}()
+
+		next.ServeHTTP(rww, r)
 	})
 }

@@ -1,7 +1,11 @@
 package middlewares
 
 import (
+	"context"
+	"kbswitch/internal/core/common/logger"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 func ContentTypeJSON(next http.Handler) http.Handler {
@@ -16,27 +20,18 @@ func ContentTypeJSON(next http.Handler) http.Handler {
 	})
 }
 
-// func RequestID(next http.Handler) http.Handler {
-// 	const (
-// 		XRequestIDKey = "XRequestID"
-// 	)
-//
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		xRequestID := uuid.NewString()
-// 		w.Header().Set(XRequestIDKey, xRequestID)
-//
-// 		next.ServeHTTP(w, r)
-// 	})
-// }
+func RequestID(next http.Handler) http.Handler {
+	const (
+		XRequestIDKey = "XRequestID"
+	)
 
-// func LogRequestResponse(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		rww := router.NewResponseWriterWrapper(w)
-// 		defer func() {
-// 			msg := logger.GetRequestResponseLog(rww, r)
-// 			logger.Info(msg)
-// 		}()
-//
-// 		next.ServeHTTP(rww, r)
-// 	})
-// }
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		xRequestID := uuid.NewString()
+		w.Header().Set(XRequestIDKey, xRequestID)
+
+		ctx := context.WithValue(r.Context(), logger.LogIDKey, xRequestID)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
+	})
+}

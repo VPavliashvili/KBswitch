@@ -16,7 +16,7 @@ func main() {
 	a := app.New(compileDate)
 	logger.Init(a)
 
-	logger.Info("APPLICATION STARTED\n")
+	logger.Info("APPLICATION STARTED")
 
 	router := api.InitRouter(a)
 

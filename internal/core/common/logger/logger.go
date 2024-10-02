@@ -7,10 +7,13 @@ import (
 	"fmt"
 	"io"
 	"kbswitch/internal/app"
+	"kbswitch/internal/core/common/middleware/models"
 	"log/slog"
 	"net/http"
 	"os"
 )
+
+const LogIDKey = "logID"
 
 const (
 	LevelDebug = slog.LevelDebug
@@ -31,7 +34,6 @@ var lvl = &slog.LevelVar{}
 // such as FATAL or TRACE
 // otherwise slog will print ERROR+4 for FATAL
 func ReplaceAttr(groups []string, a slog.Attr) slog.Attr {
-	println(a.Key)
 	if a.Key == slog.LevelKey {
 		level := a.Value.Any().(slog.Level)
 		levelLabel, exists := LevelNames[level]
@@ -90,8 +92,8 @@ func Trace(msg string) {
 	lgr.Log(context.Background(), LevelTrace, msg)
 }
 
-func getRequestLog(r *http.Request) requestLog {
-	var result requestLog
+func getRequestLog(r *http.Request) models.RequestLog {
+	var result models.RequestLog
 
 	body, _ := io.ReadAll(r.Body)
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
@@ -106,8 +108,8 @@ func getRequestLog(r *http.Request) requestLog {
 	return result
 }
 
-func getResponseLog(rww responseWriterWrapper) responseLog {
-	var result responseLog
+func getResponseLog(rww models.ResponseWriterLogWrapper) models.ResponseLog {
+	var result models.ResponseLog
 
 	var buf bytes.Buffer
 	buf.WriteString(rww.Body.String())
@@ -119,8 +121,8 @@ func getResponseLog(rww responseWriterWrapper) responseLog {
 }
 
 // returns json
-func GetRequestResponseLog(rww responseWriterWrapper, r *http.Request) string {
-	rrl := requestResponseLog{
+func GetRequestResponseLog(rww models.ResponseWriterLogWrapper, r *http.Request) string {
+	rrl := models.RequestResponseLog{
 		Req:        getRequestLog(r),
 		Resp:       getResponseLog(rww),
 		StatusCode: *(rww.StatusCode),
@@ -134,26 +136,13 @@ func GetRequestResponseLog(rww responseWriterWrapper, r *http.Request) string {
 	return string(bytes[:])
 }
 
-func NewResponseWriterWrapper(w http.ResponseWriter) responseWriterWrapper {
+func NewResponseWriterWrapper(w http.ResponseWriter) models.ResponseWriterLogWrapper {
 	var buf bytes.Buffer
 	var statusCode = 200
-	return responseWriterWrapper{
+	return models.ResponseWriterLogWrapper{
 		W:          &w,
 		Body:       &buf,
 		StatusCode: &statusCode,
 	}
 }
 
-func (rww responseWriterWrapper) Write(buf []byte) (int, error) {
-	rww.Body.Write(buf)
-	return (*rww.W).Write(buf)
-}
-
-func (rww responseWriterWrapper) Header() http.Header {
-	return (*rww.W).Header()
-}
-
-func (rww responseWriterWrapper) WriteHeader(statusCode int) {
-	(*rww.StatusCode) = statusCode
-	(*rww.W).WriteHeader(statusCode)
-}
