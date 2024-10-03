@@ -2,20 +2,22 @@ package repo
 
 import (
 	"context"
+	"fmt"
+	"kbswitch/internal/app"
+	"kbswitch/internal/core/common/database"
+	"kbswitch/internal/core/common/logger"
 	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func New(p *pgxpool.Pool) switches.Repo {
+func New(cfg app.DbConfig) switches.Repo {
 	return repo{
-		pool: p,
+		cfg: cfg,
 	}
 }
 
 type repo struct {
-	pool *pgxpool.Pool
+	cfg app.DbConfig
 }
 
 // AddNew implements switches.Repo.
@@ -25,12 +27,18 @@ func (r repo) AddNew(context.Context, models.SwitchEntity) (*int, error) {
 
 // GetAll implements switches.Repo.
 func (r repo) GetAll(ctx context.Context) ([]models.SwitchEntity, error) {
+	pool, err := database.NewPool(ctx, r.cfg)
+	if err != nil {
+		reqId := ctx.Value(logger.LogIDKey)
+		logger.Error(fmt.Sprintf("on requestId: %s, error happened: %s", reqId, err.Error()))
+		return nil, err
+	}
+
 	result := make([]models.SwitchEntity, 0)
 	query := `SELECT * FROM public.switches`
 
-	rows, err := r.pool.Query(context.Background(), query)
+	rows, err := pool.Query(context.Background(), query)
 	if err != nil {
-		// logger.Error(err.Error())
 		return result, err
 	}
 
@@ -40,14 +48,12 @@ func (r repo) GetAll(ctx context.Context) ([]models.SwitchEntity, error) {
 			&r.TotalTravel, &r.Image, &r.Manufacturer, &r.Model, &r.ActuationType,
 			&r.SoundProfile, &r.TriggerMethod, &r.Profile)
 		if err != nil {
-			// logger.Error(err.Error())
 			return result, err
 		}
 		result = append(result, r)
 	}
 
 	if err = rows.Err(); err != nil {
-		// logger.Error(err.Error())
 		return result, err
 	}
 

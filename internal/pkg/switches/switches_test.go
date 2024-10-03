@@ -79,6 +79,23 @@ func (f fakeRepo) GetID(ctx context.Context, brand, name string) (*int, error) {
 	return f.getID(brand, name)
 }
 
+type fakeLogger struct{}
+
+// LogError implements logging.Logger.
+func (f fakeLogger) LogError(msg string) {
+	panic("unimplemented")
+}
+
+// LogInfo implements logging.Logger.
+func (f fakeLogger) LogInfo(msg string) {
+	panic("unimplemented")
+}
+
+// LogTrace implements logging.Logger.
+func (f fakeLogger) LogTrace(msg string) {
+	panic("unimplemented")
+}
+
 func TestRemove(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
@@ -145,7 +162,7 @@ func TestRemove(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.New(tc.repo)
+		unit := switches.New(nil, tc.repo)
 		err := unit.Remove(context.Background(), tc.brand, tc.name)
 
 		assertErrorsEqual("Remove", t, tc.expected, err)
@@ -341,7 +358,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.New(tc.repo)
+		unit := switches.New(nil, tc.repo)
 		res, err := unit.Update(context.Background(), tc.in.brand, tc.in.name, tc.in.body)
 
 		assertErrorsEqual("Update", t, tc.expected.err, err)
@@ -463,7 +480,7 @@ func TestAddNew(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.New(tc.repo)
+		unit := switches.New(nil, tc.repo)
 		res, err := unit.AddNew(context.Background(), tc.reqbody)
 
 		assertErrorsEqual("AddNew", t, tc.expected.err, err)
@@ -585,7 +602,7 @@ func TestGetSingle(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.New(tc.repo)
+		unit := switches.New(nil, tc.repo)
 		res, err := unit.GetSingle(context.Background(), tc.brand, tc.name)
 
 		assertErrorsEqual("GetSingle", t, tc.expected.err, err)
@@ -596,6 +613,7 @@ func TestGetSingle(t *testing.T) {
 func TestGetAll(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
+		logger   fakeLogger
 		expected struct {
 			res []models.Switch
 			err *common.AppError
@@ -662,7 +680,7 @@ func TestGetAll(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		unit := switches.New(tc.repo)
+		unit := switches.New(tc.logger, tc.repo)
 		res, err := unit.GetAll(context.Background())
 
 		assertErrorsEqual("GetAll", t, tc.expected.err, err)

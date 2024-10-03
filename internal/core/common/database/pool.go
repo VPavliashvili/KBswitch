@@ -3,41 +3,19 @@ package database
 import (
 	"context"
 	"fmt"
+	"kbswitch/internal/app"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Key string
+func NewPool(ctx context.Context, cfg app.DbConfig) (*pgxpool.Pool, error) {
+	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Db)
 
-// list of pool map keys
-var PoolKey = struct {
-	Switches Key
-}{
-	Switches: "switches",
-}
-
-var pool = make(map[Key]*pgxpool.Pool)
-
-// appends a new pool with a given key
-func Append(k Key, p *pgxpool.Pool) {
-	_, exists := pool[k]
-	if !exists {
-		pool[k] = p
+	pool, connParsingErr := pgxpool.New(ctx, dbUrl)
+	if connParsingErr != nil {
+		connParsingErr = fmt.Errorf("could not create pgx pool %s", connParsingErr.Error())
+		return nil, connParsingErr
 	}
-}
 
-// gets pool by key
-func Get(k Key) *pgxpool.Pool {
-	p, exists := pool[k]
-	if exists {
-		return p
-	}
-	panic(fmt.Sprintf("pool does not contain object with key: %s", k))
-}
-
-// checks database availability
-func Ping(ctx context.Context, k Key) error {
-	p := Get(k)
-	err := p.Ping(ctx)
-	return err
+	return pool, nil
 }

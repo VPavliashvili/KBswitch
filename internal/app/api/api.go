@@ -10,9 +10,8 @@ import (
 	"kbswitch/internal/app/api/controllers/system"
 	"kbswitch/internal/app/api/middlewares"
 	"kbswitch/internal/app/api/router"
-	"kbswitch/internal/core/common/database"
 	switchservice "kbswitch/internal/pkg/switches"
-	"kbswitch/internal/pkg/switches/repo"
+	switchesrepo "kbswitch/internal/pkg/switches/repo"
 
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -26,9 +25,8 @@ func InitRouter(app app.Application) *router.CustomMux {
 	router := router.CreateAndSetup(func(this *router.CustomMux) *router.CustomMux {
 		this.Use(middlewares.ContentTypeJSON)
 		this.Use(middlewares.Timeout((app.Config.Timeout)))
-		this.Use(middlewares.InitPgxPool(database.PoolKey.Switches, app.DbConfig))
 		this.Use(middlewares.RequestID)
-		this.Use(middlewares.Logging)
+		this.Use(middlewares.LogHttpCycle)
 
 		this.AddGroup("/api/system/", func(ng *router.Group) {
 			c := system.New(app.BuildDate)
@@ -41,12 +39,18 @@ func InitRouter(app app.Application) *router.CustomMux {
 		this.AddGroup("/api/switches/", func(ng *router.Group) {
 			c := switches.New(nil)
 
-			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-				// similar to .net addscoped, new instances wil created on every api call
-				repo := repo.New(database.Get(database.PoolKey.Switches))
-				service := switchservice.New(repo)
-				c = switches.New(service)
+			// this is equivalent of .net scoped injection
+			ng.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					repo := switchesrepo.New(app.DbConfig)
+					service := switchservice.New(nil, repo)
+					c = switches.New(service)
 
+					next.ServeHTTP(w, r)
+				})
+			})
+
+			ng.HandleRouteFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 				c.HandleSwitches(r.Context(), w, r)
 			})
 

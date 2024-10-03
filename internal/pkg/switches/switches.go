@@ -3,6 +3,7 @@ package switches
 import (
 	"context"
 	"kbswitch/internal/core/common"
+	"kbswitch/internal/core/common/logging"
 	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
 )
@@ -13,7 +14,7 @@ var (
 	ErrErrorMissing  = common.NewError(common.ErrInternalServer, "no error returned when response was missing")
 )
 
-func New(repo switches.Repo) switches.Service {
+func New(logger logging.Logger, repo switches.Repo) switches.Service {
 	return service{repo: repo}
 }
 
