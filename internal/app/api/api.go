@@ -42,7 +42,7 @@ func InitRouter(app app.Application) *router.CustomMux {
 			// this is equivalent of .net scoped injection
 			ng.Use(func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					repo := switchesrepo.New(app.DbConfig)
+					repo := switchesrepo.NewObsolete(app.DbConfig)
 					service := switchservice.New(nil, repo)
 					c = switches.New(service)
 
