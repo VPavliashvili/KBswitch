@@ -2,6 +2,7 @@ package switches
 
 import (
 	"context"
+	"fmt"
 	"kbswitch/internal/core/common"
 	"kbswitch/internal/core/common/logging"
 	"kbswitch/internal/core/switches"
@@ -15,11 +16,15 @@ var (
 )
 
 func New(logger logging.Logger, repo switches.Repo) switches.Service {
-	return service{repo: repo}
+	return service{
+		repo:   repo,
+		logger: logger,
+	}
 }
 
 type service struct {
-	repo switches.Repo
+	repo   switches.Repo
+	logger logging.Logger
 }
 
 func (s service) AddNew(ctx context.Context, reqbody models.SwitchRequestBody) (*int, *common.AppError) {
@@ -120,6 +125,10 @@ func (s service) Remove(ctx context.Context, brand, name string) *common.AppErro
 func (s service) GetAll(ctx context.Context) ([]models.Switch, *common.AppError) {
 	res := []models.Switch{}
 	resp, err := s.repo.GetAll(ctx)
+	if err != nil {
+		s.logger.LogError(err.Error())
+		return res, common.Wrap(err)
+	}
 
 	for _, item := range resp {
 		s := models.Switch{
@@ -138,9 +147,7 @@ func (s service) GetAll(ctx context.Context) ([]models.Switch, *common.AppError)
 
 		res = append(res, s)
 	}
-	if err != nil {
-		return res, common.Wrap(err)
-	}
+	s.logger.LogTrace(fmt.Sprintf("result is %v", res))
 
 	return res, nil
 }
