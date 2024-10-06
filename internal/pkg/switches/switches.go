@@ -156,17 +156,21 @@ func (s service) GetSingle(ctx context.Context, brand, name string) (*models.Swi
 	switchID, err := s.repo.GetID(ctx, brand, name)
 
 	if err != nil {
+		s.logger.LogError(err.Error())
 		return nil, common.Wrap(err)
 	}
 	if switchID == nil {
+		s.logger.LogError("switchID from repo was nil")
 		return nil, &ErrNoSwitch
 	}
 
 	resp, err := s.repo.GetSingle(ctx, *switchID)
 	if err != nil {
+		s.logger.LogError(err.Error())
 		return nil, common.Wrap(err)
 	}
 	if resp == nil {
+		s.logger.LogError("response from repo was nil")
 		return nil, &ErrErrorMissing
 	}
 	res := models.Switch{
@@ -182,6 +186,7 @@ func (s service) GetSingle(ctx context.Context, brand, name string) (*models.Swi
 		TriggerMethod:    resp.TriggerMethod,
 		Profile:          resp.Profile,
 	}
+	s.logger.LogTrace(fmt.Sprintf("result is %v", res))
 
 	return &res, nil
 }

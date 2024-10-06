@@ -13,7 +13,7 @@ import (
 
 func assertLogsEqual(method string, t *testing.T, want []string, got []string) {
 	if !reflect.DeepEqual(want, got) && len(want) != len(got) {
-		t.Errorf("in method %s: log check failed\nexpected %+v\ngot %v", "GetAll", want, got)
+		t.Errorf("in method %s: log check failed\nexpected %+v\ngot %v", method, want, got)
 	}
 }
 
@@ -505,11 +505,13 @@ func TestAddNew(t *testing.T) {
 func TestGetSingle(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
+		logger   fakeLogger
 		brand    string
 		name     string
 		expected struct {
-			res *models.Switch
-			err *common.AppError
+			res  *models.Switch
+			err  *common.AppError
+			logs []string
 		}
 	}{
 		{
@@ -518,12 +520,15 @@ func TestGetSingle(t *testing.T) {
 					return nil, errTest
 				},
 				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil }},
+			logger: fakeLogger{},
 			expected: struct {
-				res *models.Switch
-				err *common.AppError
+				res  *models.Switch
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: common.Wrap(errTest),
+				res:  nil,
+				err:  common.Wrap(errTest),
+				logs: []string{LogLvlError},
 			},
 		},
 		{
@@ -533,27 +538,32 @@ func TestGetSingle(t *testing.T) {
 				},
 				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil },
 			},
-
+			logger: fakeLogger{},
 			expected: struct {
-				res *models.Switch
-				err *common.AppError
+				res  *models.Switch
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: &switches.ErrErrorMissing,
+				res:  nil,
+				err:  &switches.ErrErrorMissing,
+				logs: []string{LogLvlError},
 			},
 		},
 		{
 			repo: fakeRepo{getID: func(s1, s2 string) (*int, error) {
 				return nil, errTest
 			}},
-			brand: "",
-			name:  "",
+			logger: fakeLogger{},
+			brand:  "",
+			name:   "",
 			expected: struct {
-				res *models.Switch
-				err *common.AppError
+				res  *models.Switch
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: common.Wrap(errTest),
+				res:  nil,
+				err:  common.Wrap(errTest),
+				logs: []string{LogLvlError},
 			},
 		},
 		{
@@ -565,14 +575,17 @@ func TestGetSingle(t *testing.T) {
 					return nil, nil
 				},
 			},
-			brand: "bad brand",
-			name:  "or bad name",
+			logger: fakeLogger{},
+			brand:  "bad brand",
+			name:   "or bad name",
 			expected: struct {
-				res *models.Switch
-				err *common.AppError
+				res  *models.Switch
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: &switches.ErrNoSwitch,
+				res:  nil,
+				err:  &switches.ErrNoSwitch,
+				logs: []string{LogLvlError},
 			},
 		},
 		{
@@ -584,14 +597,17 @@ func TestGetSingle(t *testing.T) {
 					return nil, nil
 				},
 			},
-			brand: "bad brand",
-			name:  "or bad name",
+			logger: fakeLogger{},
+			brand:  "bad brand",
+			name:   "or bad name",
 			expected: struct {
-				res *models.Switch
-				err *common.AppError
+				res  *models.Switch
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: &switches.ErrNoSwitch,
+				res:  nil,
+				err:  &switches.ErrNoSwitch,
+				logs: []string{LogLvlError},
 			},
 		},
 		{
@@ -603,24 +619,28 @@ func TestGetSingle(t *testing.T) {
 					return intptr(123), nil
 				},
 			},
-			brand: "brand",
-			name:  "name",
+			logger: fakeLogger{},
+			brand:  "brand",
+			name:   "name",
 			expected: struct {
-				res *models.Switch
-				err *common.AppError
+				res  *models.Switch
+				err  *common.AppError
+				logs []string
 			}{
-				res: &models.Switch{Name: "name", Brand: "brand"},
-				err: nil,
+				res:  &models.Switch{Name: "name", Brand: "brand"},
+				err:  nil,
+				logs: []string{LogLvlTrace},
 			},
 		},
 	}
 
 	for _, tc := range tcases {
-		unit := switches.New(nil, tc.repo)
+		unit := switches.New(&tc.logger, tc.repo)
 		res, err := unit.GetSingle(context.Background(), tc.brand, tc.name)
 
 		assertErrorsEqual("GetSingle", t, tc.expected.err, err)
 		assertResultsEqual("GetSingle", t, tc.expected.res, res)
+		assertLogsEqual("GetSingle", t, tc.expected.logs, tc.logger.logs)
 	}
 }
 
