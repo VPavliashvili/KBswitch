@@ -113,9 +113,13 @@ func (f *fakeLogger) LogTrace(msg string) {
 func TestRemove(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
+		logger   fakeLogger
 		brand    string
 		name     string
-		expected *common.AppError
+		expected struct {
+			err  *common.AppError
+			logs []string
+		}
 	}{
 		{
 			repo: fakeRepo{
@@ -123,9 +127,15 @@ func TestRemove(t *testing.T) {
 					return nil, nil
 				},
 			},
-			brand:    "test",
-			name:     "test",
-			expected: &switches.ErrNoSwitch,
+			brand: "test",
+			name:  "test",
+			expected: struct {
+				err  *common.AppError
+				logs []string
+			}{
+				err:  &switches.ErrNoSwitch,
+				logs: []string{LogLvlError},
+			},
 		},
 		{
 			repo: fakeRepo{
@@ -133,9 +143,15 @@ func TestRemove(t *testing.T) {
 					return nil, errTest
 				},
 			},
-			brand:    "test",
-			name:     "test",
-			expected: common.Wrap(errTest),
+			brand: "test",
+			name:  "test",
+			expected: struct {
+				err  *common.AppError
+				logs []string
+			}{
+				err:  common.Wrap(errTest),
+				logs: []string{LogLvlError},
+			},
 		},
 		{
 			repo: fakeRepo{
@@ -143,9 +159,15 @@ func TestRemove(t *testing.T) {
 					return intptr(123), errTest
 				},
 			},
-			brand:    "test",
-			name:     "test",
-			expected: common.Wrap(errTest),
+			brand: "test",
+			name:  "test",
+			expected: struct {
+				err  *common.AppError
+				logs []string
+			}{
+				err:  common.Wrap(errTest),
+				logs: []string{LogLvlError},
+			},
 		},
 		{
 			repo: fakeRepo{
@@ -156,9 +178,15 @@ func TestRemove(t *testing.T) {
 					return errTest
 				},
 			},
-			brand:    "test",
-			name:     "test",
-			expected: common.Wrap(errTest),
+			brand: "test",
+			name:  "test",
+			expected: struct {
+				err  *common.AppError
+				logs []string
+			}{
+				err:  common.Wrap(errTest),
+				logs: []string{LogLvlError},
+			},
 		},
 		{
 			repo: fakeRepo{
@@ -169,17 +197,24 @@ func TestRemove(t *testing.T) {
 					return nil
 				},
 			},
-			brand:    "test",
-			name:     "test",
-			expected: nil,
+			brand: "test",
+			name:  "test",
+			expected: struct {
+				err  *common.AppError
+				logs []string
+			}{
+				err:  nil,
+				logs: []string{LogLvlTrace},
+			},
 		},
 	}
 
 	for _, tc := range tcases {
-		unit := switches.New(nil, tc.repo)
+		unit := switches.New(&tc.logger, tc.repo)
 		err := unit.Remove(context.Background(), tc.brand, tc.name)
 
-		assertErrorsEqual("Remove", t, tc.expected, err)
+		assertErrorsEqual("Remove", t, tc.expected.err, err)
+		assertLogsEqual("Remove", t, tc.expected.logs, tc.logger.logs)
 	}
 }
 

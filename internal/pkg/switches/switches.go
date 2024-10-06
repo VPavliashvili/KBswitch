@@ -116,16 +116,20 @@ func (s service) Update(ctx context.Context, brand, name string, body models.Swi
 func (s service) Remove(ctx context.Context, brand, name string) *common.AppError {
 	switchID, err := s.repo.GetID(ctx, brand, name)
 	if err != nil {
+		s.logger.LogError(err.Error())
 		return common.Wrap(err)
 	}
 	if switchID == nil {
+		s.logger.LogError("switchID from repo was nil")
 		return &ErrNoSwitch
 	}
 
 	err = s.repo.Remove(ctx, *switchID)
 	if err != nil {
+		s.logger.LogError(err.Error())
 		return common.Wrap(err)
 	}
+	s.logger.LogTrace(fmt.Sprintf("switch %s,%s removed successfully is", brand, name))
 
 	return nil
 }
