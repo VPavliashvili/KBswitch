@@ -30,9 +30,11 @@ type service struct {
 func (s service) AddNew(ctx context.Context, reqbody models.SwitchRequestBody) (*int, *common.AppError) {
 	switchID, err := s.repo.GetID(ctx, reqbody.Brand, reqbody.Name)
 	if err != nil {
+		s.logger.LogError(err.Error())
 		return nil, common.Wrap(err)
 	}
 	if switchID != nil {
+		s.logger.LogError(fmt.Sprintf("switch on given ID %v, already exist", switchID))
 		return nil, &ErrAlreadyExists
 	}
 
@@ -52,9 +54,11 @@ func (s service) AddNew(ctx context.Context, reqbody models.SwitchRequestBody) (
 
 	resp, err := s.repo.AddNew(ctx, entity)
 	if err != nil {
+		s.logger.LogError(err.Error())
 		return nil, common.Wrap(err)
 	}
 
+	s.logger.LogTrace(fmt.Sprintf("result is %v", resp))
 	return resp, nil
 }
 

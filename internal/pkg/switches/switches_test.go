@@ -384,9 +384,11 @@ func TestAddNew(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
 		reqbody  models.SwitchRequestBody
+		logger   fakeLogger
 		expected struct {
-			res *int
-			err *common.AppError
+			res  *int
+			err  *common.AppError
+			logs []string
 		}
 	}{
 		{
@@ -395,13 +397,16 @@ func TestAddNew(t *testing.T) {
 					return intptr(123), nil
 				},
 			},
+			logger:  fakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
-				res *int
-				err *common.AppError
+				res  *int
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: &switches.ErrAlreadyExists,
+				res:  nil,
+				err:  &switches.ErrAlreadyExists,
+				logs: []string{LogLvlError},
 			},
 		},
 		{
@@ -410,13 +415,16 @@ func TestAddNew(t *testing.T) {
 					return nil, errTest
 				},
 			},
+			logger:  fakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
-				res *int
-				err *common.AppError
+				res  *int
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: common.Wrap(errTest),
+				res:  nil,
+				err:  common.Wrap(errTest),
+				logs: []string{LogLvlError},
 			},
 		},
 		{
@@ -428,13 +436,16 @@ func TestAddNew(t *testing.T) {
 					return intptr(123), errTest
 				},
 			},
+			logger:  fakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
-				res *int
-				err *common.AppError
+				res  *int
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: common.Wrap(errTest),
+				res:  nil,
+				err:  common.Wrap(errTest),
+				logs: []string{LogLvlError},
 			},
 		},
 		{
@@ -446,13 +457,16 @@ func TestAddNew(t *testing.T) {
 					return nil, errTest
 				},
 			},
+			logger:  fakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
-				res *int
-				err *common.AppError
+				res  *int
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: common.Wrap(errTest),
+				res:  nil,
+				err:  common.Wrap(errTest),
+				logs: []string{LogLvlError},
 			},
 		},
 		{
@@ -464,13 +478,16 @@ func TestAddNew(t *testing.T) {
 					return nil, nil
 				},
 			},
+			logger:  fakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
-				res *int
-				err *common.AppError
+				res  *int
+				err  *common.AppError
+				logs []string
 			}{
-				res: nil,
-				err: nil,
+				res:  nil,
+				err:  nil,
+				logs: []string{LogLvlTrace},
 			},
 		},
 		{
@@ -482,23 +499,27 @@ func TestAddNew(t *testing.T) {
 					return intptr(123), nil
 				},
 			},
+			logger:  fakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
-				res *int
-				err *common.AppError
+				res  *int
+				err  *common.AppError
+				logs []string
 			}{
-				res: intptr(123),
-				err: nil,
+				res:  intptr(123),
+				err:  nil,
+				logs: []string{LogLvlTrace},
 			},
 		},
 	}
 
 	for _, tc := range tcases {
-		unit := switches.New(nil, tc.repo)
+		unit := switches.New(&tc.logger, tc.repo)
 		res, err := unit.AddNew(context.Background(), tc.reqbody)
 
 		assertErrorsEqual("AddNew", t, tc.expected.err, err)
 		assertResultsEqual("AddNew", t, tc.expected.res, res)
+		assertLogsEqual("AddNew", t, tc.expected.logs, tc.logger.logs)
 	}
 }
 
