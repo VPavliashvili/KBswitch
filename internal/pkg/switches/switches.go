@@ -65,9 +65,11 @@ func (s service) AddNew(ctx context.Context, reqbody models.SwitchRequestBody) (
 func (s service) Update(ctx context.Context, brand, name string, body models.SwitchRequestBody) (*models.Switch, *common.AppError) {
 	switchID, err := s.repo.GetID(ctx, brand, name)
 	if err != nil {
+		s.logger.LogError(err.Error())
 		return nil, common.Wrap(err)
 	}
 	if switchID == nil {
+		s.logger.LogError("switchID from repo was nil")
 		return nil, &ErrNoSwitch
 	}
 
@@ -86,6 +88,7 @@ func (s service) Update(ctx context.Context, brand, name string, body models.Swi
 	}
 	resp, err := s.repo.Update(ctx, *switchID, entity)
 	if err != nil {
+		s.logger.LogError(err.Error())
 		return nil, common.Wrap(err)
 	}
 	if resp == nil {
@@ -105,6 +108,7 @@ func (s service) Update(ctx context.Context, brand, name string, body models.Swi
 		TriggerMethod:    resp.TriggerMethod,
 		Profile:          resp.Profile,
 	}
+	s.logger.LogTrace(fmt.Sprintf("result is %v", res))
 
 	return &res, nil
 }
