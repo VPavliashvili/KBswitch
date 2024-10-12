@@ -2,45 +2,12 @@ package switches_test
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"kbswitch/internal/core/common"
+	"kbswitch/internal/core/common/tests"
 	"kbswitch/internal/core/switches/models"
 	"kbswitch/internal/pkg/switches"
-	"reflect"
 	"testing"
 )
-
-func assertLogsEqual(method string, t *testing.T, want []string, got []string) {
-	if !reflect.DeepEqual(want, got) && len(want) != len(got) {
-		t.Errorf("in method %s: log check failed\nexpected %+v\ngot %v", method, want, got)
-	}
-}
-
-func assertErrorsEqual(method string, t *testing.T, want *common.AppError, got *common.AppError) {
-	if want == nil && got != nil {
-		t.Errorf("in method %s: expected error equals to nil, when error returned: %v", method, got)
-	} else if want != nil {
-		et := want.Errtype.Error() == got.Errtype.Error()
-		er := want.Reason.Error() == got.Reason.Error()
-		equals := et && er
-
-		if !equals {
-			t.Errorf("in method %s: error check failed\nexpected type: %v\ngot type: %v\nexpected reason: %v\ngot reason: %v",
-				method, want.Errtype, got.Errtype, want.Reason, got.Reason)
-		}
-	}
-}
-
-func assertResultsEqual(method string, t *testing.T, want any, got any) {
-	if !reflect.DeepEqual(want, got) {
-		w, _ := json.Marshal(want)
-		g, _ := json.Marshal(got)
-		t.Errorf("in method %s: result check failed\nexpected %s\ngot %s", method, w, g)
-	}
-}
-
-var errTest = fmt.Errorf("test")
 
 func intptr(x int) *int {
 	return &x
@@ -85,35 +52,10 @@ func (f fakeRepo) GetID(ctx context.Context, brand, name string) (*int, error) {
 	return f.getID(brand, name)
 }
 
-const (
-	LogLvlInfo  = "I"
-	LogLvlError = "E"
-	LogLvlTrace = "T"
-)
-
-type fakeLogger struct {
-	logs []string
-}
-
-// LogError implements logging.Logger.
-func (f *fakeLogger) LogError(msg string) {
-	f.logs = append(f.logs, LogLvlError)
-}
-
-// LogInfo implements logging.Logger.
-func (f *fakeLogger) LogInfo(msg string) {
-	f.logs = append(f.logs, LogLvlInfo)
-}
-
-// LogTrace implements logging.Logger.
-func (f *fakeLogger) LogTrace(msg string) {
-	f.logs = append(f.logs, LogLvlTrace)
-}
-
 func TestRemove(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
-		logger   fakeLogger
+		logger   tests.FakeLogger
 		brand    string
 		name     string
 		expected struct {
@@ -134,13 +76,13 @@ func TestRemove(t *testing.T) {
 				logs []string
 			}{
 				err:  &switches.ErrNoSwitch,
-				logs: []string{LogLvlError},
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return nil, errTest
+					return nil, tests.ErrTest
 				},
 			},
 			brand: "test",
@@ -149,14 +91,14 @@ func TestRemove(t *testing.T) {
 				err  *common.AppError
 				logs []string
 			}{
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return intptr(123), errTest
+					return intptr(123), tests.ErrTest
 				},
 			},
 			brand: "test",
@@ -165,8 +107,8 @@ func TestRemove(t *testing.T) {
 				err  *common.AppError
 				logs []string
 			}{
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -175,7 +117,7 @@ func TestRemove(t *testing.T) {
 					return intptr(123), nil
 				},
 				removeAction: func(i int) error {
-					return errTest
+					return tests.ErrTest
 				},
 			},
 			brand: "test",
@@ -184,8 +126,8 @@ func TestRemove(t *testing.T) {
 				err  *common.AppError
 				logs []string
 			}{
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -204,7 +146,7 @@ func TestRemove(t *testing.T) {
 				logs []string
 			}{
 				err:  nil,
-				logs: []string{LogLvlTrace},
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
 	}
@@ -213,15 +155,15 @@ func TestRemove(t *testing.T) {
 		unit := switches.New(&tc.logger, tc.repo)
 		err := unit.Remove(context.Background(), tc.brand, tc.name)
 
-		assertErrorsEqual("Remove", t, tc.expected.err, err)
-		assertLogsEqual("Remove", t, tc.expected.logs, tc.logger.logs)
+		tests.AssertErrorsEqual("Remove", t, tc.expected.err, err)
+		tests.AssertLogsEqual("Remove", t, tc.expected.logs, tc.logger.Logs)
 	}
 }
 
 func TestUpdate(t *testing.T) {
 	tcases := []struct {
 		repo   fakeRepo
-		logger fakeLogger
+		logger tests.FakeLogger
 		in     struct {
 			brand string
 			name  string
@@ -255,13 +197,13 @@ func TestUpdate(t *testing.T) {
 			}{
 				res:  nil,
 				err:  &switches.ErrNoSwitch,
-				logs: []string{LogLvlError},
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return nil, errTest
+					return nil, tests.ErrTest
 				},
 			},
 			in: struct {
@@ -279,14 +221,14 @@ func TestUpdate(t *testing.T) {
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return intptr(123), errTest
+					return intptr(123), tests.ErrTest
 				},
 			},
 			in: struct {
@@ -304,8 +246,8 @@ func TestUpdate(t *testing.T) {
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -333,7 +275,7 @@ func TestUpdate(t *testing.T) {
 			}{
 				res:  nil,
 				err:  nil,
-				logs: []string{},
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
 		{
@@ -342,7 +284,7 @@ func TestUpdate(t *testing.T) {
 					return intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
-					return nil, errTest
+					return nil, tests.ErrTest
 				},
 			},
 			in: struct {
@@ -360,8 +302,8 @@ func TestUpdate(t *testing.T) {
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -370,7 +312,7 @@ func TestUpdate(t *testing.T) {
 					return intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
-					return &models.SwitchEntity{Model: "tst"}, errTest
+					return &models.SwitchEntity{Model: "tst"}, tests.ErrTest
 				},
 			},
 			in: struct {
@@ -388,8 +330,8 @@ func TestUpdate(t *testing.T) {
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -417,7 +359,7 @@ func TestUpdate(t *testing.T) {
 			}{
 				res:  &models.Switch{Name: "tst"},
 				err:  nil,
-				logs: []string{LogLvlTrace},
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
 	}
@@ -426,9 +368,9 @@ func TestUpdate(t *testing.T) {
 		unit := switches.New(&tc.logger, tc.repo)
 		res, err := unit.Update(context.Background(), tc.in.brand, tc.in.name, tc.in.body)
 
-		assertErrorsEqual("Update", t, tc.expected.err, err)
-		assertResultsEqual("Update", t, tc.expected.res, res)
-		assertLogsEqual("Update", t, tc.expected.logs, tc.logger.logs)
+		tests.AssertErrorsEqual("Update", t, tc.expected.err, err)
+		tests.AssertResultsEqual("Update", t, tc.expected.res, res)
+		tests.AssertLogsEqual("Update", t, tc.expected.logs, tc.logger.Logs)
 	}
 }
 
@@ -436,7 +378,7 @@ func TestAddNew(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
 		reqbody  models.SwitchRequestBody
-		logger   fakeLogger
+		logger   tests.FakeLogger
 		expected struct {
 			res  *int
 			err  *common.AppError
@@ -449,7 +391,7 @@ func TestAddNew(t *testing.T) {
 					return intptr(123), nil
 				},
 			},
-			logger:  fakeLogger{},
+			logger:  tests.FakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res  *int
@@ -458,16 +400,16 @@ func TestAddNew(t *testing.T) {
 			}{
 				res:  nil,
 				err:  &switches.ErrAlreadyExists,
-				logs: []string{LogLvlError},
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return nil, errTest
+					return nil, tests.ErrTest
 				},
 			},
-			logger:  fakeLogger{},
+			logger:  tests.FakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res  *int
@@ -475,8 +417,8 @@ func TestAddNew(t *testing.T) {
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -485,10 +427,10 @@ func TestAddNew(t *testing.T) {
 					return nil, nil
 				},
 				addNewAction: func(se models.SwitchEntity) (*int, error) {
-					return intptr(123), errTest
+					return intptr(123), tests.ErrTest
 				},
 			},
-			logger:  fakeLogger{},
+			logger:  tests.FakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res  *int
@@ -496,8 +438,8 @@ func TestAddNew(t *testing.T) {
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -506,10 +448,10 @@ func TestAddNew(t *testing.T) {
 					return nil, nil
 				},
 				addNewAction: func(se models.SwitchEntity) (*int, error) {
-					return nil, errTest
+					return nil, tests.ErrTest
 				},
 			},
-			logger:  fakeLogger{},
+			logger:  tests.FakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res  *int
@@ -517,8 +459,8 @@ func TestAddNew(t *testing.T) {
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -530,7 +472,7 @@ func TestAddNew(t *testing.T) {
 					return nil, nil
 				},
 			},
-			logger:  fakeLogger{},
+			logger:  tests.FakeLogger{},
 			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
 			expected: struct {
 				res  *int
@@ -539,46 +481,41 @@ func TestAddNew(t *testing.T) {
 			}{
 				res:  nil,
 				err:  nil,
-				logs: []string{LogLvlTrace},
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
-		{
-			repo: fakeRepo{
-				getID: func(s1, s2 string) (*int, error) {
-					return nil, nil
-				},
-				addNewAction: func(se models.SwitchEntity) (*int, error) {
-					return intptr(123), nil
-				},
+		{repo: fakeRepo{
+			getID: func(s1, s2 string) (*int, error) {
+				return nil, nil
 			},
-			logger:  fakeLogger{},
-			reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"},
-			expected: struct {
-				res  *int
-				err  *common.AppError
-				logs []string
-			}{
-				res:  intptr(123),
-				err:  nil,
-				logs: []string{LogLvlTrace},
+			addNewAction: func(se models.SwitchEntity) (*int, error) {
+				return intptr(123), nil
 			},
-		},
+		}, logger: tests.FakeLogger{}, reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"}, expected: struct {
+			res  *int
+			err  *common.AppError
+			logs []string
+		}{
+			res:  intptr(123),
+			err:  nil,
+			logs: []string{tests.LogLvlTrace},
+		}},
 	}
 
 	for _, tc := range tcases {
 		unit := switches.New(&tc.logger, tc.repo)
 		res, err := unit.AddNew(context.Background(), tc.reqbody)
 
-		assertErrorsEqual("AddNew", t, tc.expected.err, err)
-		assertResultsEqual("AddNew", t, tc.expected.res, res)
-		assertLogsEqual("AddNew", t, tc.expected.logs, tc.logger.logs)
+		tests.AssertErrorsEqual("AddNew", t, tc.expected.err, err)
+		tests.AssertResultsEqual("AddNew", t, tc.expected.res, res)
+		tests.AssertLogsEqual("AddNew", t, tc.expected.logs, tc.logger.Logs)
 	}
 }
 
 func TestGetSingle(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
-		logger   fakeLogger
+		logger   tests.FakeLogger
 		brand    string
 		name     string
 		expected struct {
@@ -590,18 +527,18 @@ func TestGetSingle(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getSingleReturner: func(int) (*models.SwitchEntity, error) {
-					return nil, errTest
+					return nil, tests.ErrTest
 				},
 				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil }},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			expected: struct {
 				res  *models.Switch
 				err  *common.AppError
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -611,7 +548,7 @@ func TestGetSingle(t *testing.T) {
 				},
 				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil },
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			expected: struct {
 				res  *models.Switch
 				err  *common.AppError
@@ -619,14 +556,14 @@ func TestGetSingle(t *testing.T) {
 			}{
 				res:  nil,
 				err:  &switches.ErrErrorMissing,
-				logs: []string{LogLvlError},
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
 			repo: fakeRepo{getID: func(s1, s2 string) (*int, error) {
-				return nil, errTest
+				return nil, tests.ErrTest
 			}},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			brand:  "",
 			name:   "",
 			expected: struct {
@@ -635,8 +572,8 @@ func TestGetSingle(t *testing.T) {
 				logs []string
 			}{
 				res:  nil,
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -648,7 +585,7 @@ func TestGetSingle(t *testing.T) {
 					return nil, nil
 				},
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			brand:  "bad brand",
 			name:   "or bad name",
 			expected: struct {
@@ -658,7 +595,7 @@ func TestGetSingle(t *testing.T) {
 			}{
 				res:  nil,
 				err:  &switches.ErrNoSwitch,
-				logs: []string{LogLvlError},
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -670,7 +607,7 @@ func TestGetSingle(t *testing.T) {
 					return nil, nil
 				},
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			brand:  "bad brand",
 			name:   "or bad name",
 			expected: struct {
@@ -680,7 +617,7 @@ func TestGetSingle(t *testing.T) {
 			}{
 				res:  nil,
 				err:  &switches.ErrNoSwitch,
-				logs: []string{LogLvlError},
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -692,7 +629,7 @@ func TestGetSingle(t *testing.T) {
 					return intptr(123), nil
 				},
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			brand:  "brand",
 			name:   "name",
 			expected: struct {
@@ -702,7 +639,7 @@ func TestGetSingle(t *testing.T) {
 			}{
 				res:  &models.Switch{Name: "name", Brand: "brand"},
 				err:  nil,
-				logs: []string{LogLvlTrace},
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
 	}
@@ -711,16 +648,16 @@ func TestGetSingle(t *testing.T) {
 		unit := switches.New(&tc.logger, tc.repo)
 		res, err := unit.GetSingle(context.Background(), tc.brand, tc.name)
 
-		assertErrorsEqual("GetSingle", t, tc.expected.err, err)
-		assertResultsEqual("GetSingle", t, tc.expected.res, res)
-		assertLogsEqual("GetSingle", t, tc.expected.logs, tc.logger.logs)
+		tests.AssertErrorsEqual("GetSingle", t, tc.expected.err, err)
+		tests.AssertResultsEqual("GetSingle", t, tc.expected.res, res)
+		tests.AssertLogsEqual("GetSingle", t, tc.expected.logs, tc.logger.Logs)
 	}
 }
 
 func TestGetAll(t *testing.T) {
 	tcases := []struct {
 		repo     fakeRepo
-		logger   fakeLogger
+		logger   tests.FakeLogger
 		expected struct {
 			res  []models.Switch
 			err  *common.AppError
@@ -730,18 +667,18 @@ func TestGetAll(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getAllReturner: func() ([]models.SwitchEntity, error) {
-					return nil, errTest
+					return nil, tests.ErrTest
 				},
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			expected: struct {
 				res  []models.Switch
 				err  *common.AppError
 				logs []string
 			}{
 				res:  []models.Switch{},
-				err:  common.Wrap(errTest),
-				logs: []string{LogLvlError},
+				err:  common.Wrap(tests.ErrTest),
+				logs: []string{tests.LogLvlError},
 			},
 		},
 		{
@@ -750,7 +687,7 @@ func TestGetAll(t *testing.T) {
 					return []models.SwitchEntity{{Model: "testname", Manufacturer: "idkbrand"}}, nil
 				},
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			expected: struct {
 				res  []models.Switch
 				err  *common.AppError
@@ -760,7 +697,7 @@ func TestGetAll(t *testing.T) {
 					{Name: "testname", Brand: "idkbrand"},
 				},
 				err:  nil,
-				logs: []string{LogLvlTrace},
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
 		{
@@ -769,7 +706,7 @@ func TestGetAll(t *testing.T) {
 					return nil, nil
 				},
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			expected: struct {
 				res  []models.Switch
 				err  *common.AppError
@@ -777,7 +714,7 @@ func TestGetAll(t *testing.T) {
 			}{
 				res:  []models.Switch{},
 				err:  nil,
-				logs: []string{LogLvlTrace},
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
 		{
@@ -786,7 +723,7 @@ func TestGetAll(t *testing.T) {
 					return []models.SwitchEntity{}, nil
 				},
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			expected: struct {
 				res  []models.Switch
 				err  *common.AppError
@@ -794,7 +731,7 @@ func TestGetAll(t *testing.T) {
 			}{
 				res:  []models.Switch{},
 				err:  nil,
-				logs: []string{LogLvlTrace},
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
 	}
@@ -803,8 +740,8 @@ func TestGetAll(t *testing.T) {
 		unit := switches.New(&tc.logger, tc.repo)
 		res, err := unit.GetAll(context.Background())
 
-		assertErrorsEqual("GetAll", t, tc.expected.err, err)
-		assertResultsEqual("GetAll", t, tc.expected.res, res)
-		assertLogsEqual("GetAll", t, tc.expected.logs, tc.logger.logs)
+		tests.AssertErrorsEqual("GetAll", t, tc.expected.err, err)
+		tests.AssertResultsEqual("GetAll", t, tc.expected.res, res)
+		tests.AssertLogsEqual("GetAll", t, tc.expected.logs, tc.logger.Logs)
 	}
 }

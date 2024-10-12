@@ -92,6 +92,7 @@ func (s service) Update(ctx context.Context, brand, name string, body models.Swi
 		return nil, common.Wrap(err)
 	}
 	if resp == nil {
+		s.logger.LogTrace("no response from update, returning nil")
 		return nil, nil
 	}
 

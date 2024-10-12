@@ -2,10 +2,9 @@ package repo_test
 
 import (
 	"context"
-	"encoding/json"
+	"kbswitch/internal/core/common/tests"
 	"kbswitch/internal/core/switches/models"
 	"kbswitch/internal/pkg/switches/repo"
-	"reflect"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -13,54 +12,8 @@ import (
 	"github.com/pashagolub/pgxmock/v3"
 )
 
-func assertLogsEqual(method string, t *testing.T, want []string, got []string) {
-	if !reflect.DeepEqual(want, got) && len(want) != len(got) {
-		t.Errorf("in method %s: log check failed\nexpected %+v\ngot %v", method, want, got)
-	}
-}
-
-func assertErrorReturned(method string, t *testing.T, want error, got error) {
-	if want != nil && got == nil {
-		t.Errorf("in method %s: expected error is not nil %v, when result returned nil: %v", method, want, got)
-	}
-}
-
-func assertResultsEqual(method string, t *testing.T, want any, got any) {
-	if !reflect.DeepEqual(want, got) {
-		w, _ := json.Marshal(want)
-		g, _ := json.Marshal(got)
-		t.Errorf("in method %s: result check failed\nexpected %s\ngot %s", method, w, g)
-	}
-}
-
-const (
-	LogLvlInfo  = "I"
-	LogLvlError = "E"
-	LogLvlTrace = "T"
-)
-
-type fakeLogger struct {
-	logs []string
-}
-
-// LogError implements logging.Logger.
-func (f *fakeLogger) LogError(msg string) {
-	f.logs = append(f.logs, LogLvlError)
-}
-
-// LogInfo implements logging.Logger.
-func (f *fakeLogger) LogInfo(msg string) {
-	f.logs = append(f.logs, LogLvlInfo)
-}
-
-// LogTrace implements logging.Logger.
-func (f *fakeLogger) LogTrace(msg string) {
-	f.logs = append(f.logs, LogLvlTrace)
-}
-
 type fakePool struct {
-	getAllReturner func() (pgx.Rows, error)
-	// getAllReturner func() (pgxmock.Rows, error)
+	queryFunc func() (pgx.Rows, error)
 }
 
 // Exec implements database.DBPool.
@@ -70,7 +23,7 @@ func (f fakePool) Exec(ctx context.Context, sql string, args ...any) (pgconn.Com
 
 // Query implements database.DBPool.
 func (f fakePool) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
-	return f.getAllReturner()
+	return f.queryFunc()
 }
 
 // QueryRow implements database.DBPool.
@@ -81,7 +34,7 @@ func (f fakePool) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 func TestGetAll(t *testing.T) {
 	cases := []struct {
 		pool     fakePool
-		logger   fakeLogger
+		logger   tests.FakeLogger
 		expected struct {
 			res  []models.SwitchEntity
 			err  error
@@ -90,7 +43,7 @@ func TestGetAll(t *testing.T) {
 	}{
 		{
 			pool: fakePool{
-				getAllReturner: func() (pgx.Rows, error) {
+				queryFunc: func() (pgx.Rows, error) {
 					c, _ := pgxmock.NewConn()
 					defer c.Close(context.Background())
 
@@ -108,7 +61,7 @@ func TestGetAll(t *testing.T) {
 					return rows, nil
 				},
 			},
-			logger: fakeLogger{},
+			logger: tests.FakeLogger{},
 			expected: struct {
 				res  []models.SwitchEntity
 				err  error
@@ -145,21 +98,62 @@ func TestGetAll(t *testing.T) {
 					},
 				},
 				err:  nil,
-				logs: []string{LogLvlTrace},
+				logs: []string{tests.LogLvlTrace},
+			},
+		},
+		{
+			pool: fakePool{
+				queryFunc: func() (pgx.Rows, error) {
+					c, _ := pgxmock.NewConn()
+					defer c.Close(context.Background())
+
+					columns := []string{
+						"id", "manufacturer", "actuationType",
+						"lifespan", "model", "image", "operatingForce",
+						"activationTravel", "totalTravel", "soundProfile",
+						"triggerMethod", "profile",
+					}
+					rows := c.NewRows(columns).Kind()
+
+					return rows, nil
+				},
+			},
+			logger: tests.FakeLogger{},
+			expected: struct {
+				res  []models.SwitchEntity
+				err  error
+				logs []string
+			}{
+				res:  []models.SwitchEntity{},
+				err:  nil,
+				logs: []string{tests.LogLvlTrace},
+			},
+		},
+		{
+			pool: fakePool{
+				queryFunc: func() (pgx.Rows, error) {
+					return nil, tests.ErrTest
+				},
+			},
+			logger: tests.FakeLogger{},
+			expected: struct {
+				res  []models.SwitchEntity
+				err  error
+				logs []string
+			}{
+				res:  []models.SwitchEntity{},
+				err:  tests.ErrTest,
+				logs: []string{tests.LogLvlError},
 			},
 		},
 	}
 
 	for _, tc := range cases {
 		sut := repo.New(&tc.logger, tc.pool)
-		got, _ := sut.GetAll(context.Background())
-		want := tc.expected
+		got, err := sut.GetAll(context.Background())
 
-		if !reflect.DeepEqual(want.res, got) {
-			t.Errorf("want: %+v\ngot: %+v", want.res, got)
-		}
-
-		assertLogsEqual("GetAll", t, tc.expected.logs, tc.logger.logs)
-
+		tests.AssertHasError("GetAll", t, tc.expected.err, err)
+		tests.AssertResultsEqual("GetAll", t, tc.expected.res, got)
+		tests.AssertLogsEqual("GetAll", t, tc.expected.logs, tc.logger.Logs)
 	}
 }

@@ -36,42 +36,14 @@ func (r repo) AddNew(context.Context, models.SwitchEntity) (*int, error) {
 
 // GetAll implements switches.Repo.
 func (r repo) GetAll(ctx context.Context) ([]models.SwitchEntity, error) {
-	// pool, err := database.NewPool(ctx, r.cfg)
-	// if err != nil {
-	// 	// reqId := ctx.Value(logger.LogIDKey)
-	// 	// logger.Error(fmt.Sprintf("on requestId: %s, error happened: %s", reqId, err.Error()))
-	// 	return nil, err
-	// }
-	//
-	// result := make([]models.SwitchEntity, 0)
-	// query := `SELECT * FROM public.switches`
-	//
-	// rows, err := pool.Query(context.Background(), query)
-	// if err != nil {
-	// 	return result, err
-	// }
-	//
-	// for rows.Next() {
-	// 	var r models.SwitchEntity
-	// 	err := rows.Scan(&r.ID, &r.Lifespan, &r.OperatingForce, &r.ActivationTravel,
-	// 		&r.TotalTravel, &r.Image, &r.Manufacturer, &r.Model, &r.ActuationType,
-	// 		&r.SoundProfile, &r.TriggerMethod, &r.Profile)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	result = append(result, r)
-	// }
-	//
-	// if err = rows.Err(); err != nil {
-	// 	return result, err
-	// }
-	//
-	// return result, nil
-
 	result := make([]models.SwitchEntity, 0)
 	query := `SELECT * FROM public.switches`
 
-	rows, _ := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		r.logger.LogError(fmt.Sprintf("query error: %s", err.Error()))
+		return []models.SwitchEntity{}, err
+	}
 	defer rows.Close()
 
 	for rows.Next() {
@@ -82,8 +54,8 @@ func (r repo) GetAll(ctx context.Context) ([]models.SwitchEntity, error) {
 
 		result = append(result, r)
 	}
-	r.logger.LogTrace(fmt.Sprintf("result is %v", result))
 
+	r.logger.LogTrace(fmt.Sprintf("result is %v", result))
 	return result, nil
 }
 
