@@ -47,12 +47,16 @@ func (r repo) GetAll(ctx context.Context) ([]models.SwitchEntity, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var r models.SwitchEntity
-		rows.Scan(&r.ID, &r.Manufacturer, &r.ActuationType, &r.Lifespan,
-			&r.Model, &r.Image, &r.OperatingForce, &r.ActivationTravel, &r.TotalTravel,
-			&r.SoundProfile, &r.TriggerMethod, &r.Profile)
+		var s models.SwitchEntity
+		err = rows.Scan(&s.ID, &s.Manufacturer, &s.ActuationType, &s.Lifespan,
+			&s.Model, &s.Image, &s.OperatingForce, &s.ActivationTravel, &s.TotalTravel,
+			&s.SoundProfile, &s.TriggerMethod, &s.Profile)
+		if err != nil {
+			r.logger.LogError(err.Error())
+			return []models.SwitchEntity{}, err
+		}
 
-		result = append(result, r)
+		result = append(result, s)
 	}
 
 	r.logger.LogTrace(fmt.Sprintf("result is %v", result))
@@ -67,6 +71,8 @@ func (r repo) GetID(ctx context.Context, brand string, name string) (*int, error
 // GetSingle implements switches.Repo.
 func (r repo) GetSingle(context.Context, int) (*models.SwitchEntity, error) {
 	panic("unimplemented")
+	// query := `SELECT * FROM public.switches WHERE id=$1`
+	// row := r.pool.QueryRow(context.Background(), )
 }
 
 // Remove implements switches.Repo.

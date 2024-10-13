@@ -12,8 +12,65 @@ import (
 	"github.com/pashagolub/pgxmock/v3"
 )
 
+type fakeRows struct {
+	next func() bool
+	scan func() error
+}
+
+var connclosed bool
+
+// Close implements pgx.Rows.
+func (f *fakeRows) Close() {
+	connclosed = true
+}
+
+// CommandTag implements pgx.Rows.
+func (f fakeRows) CommandTag() pgconn.CommandTag {
+	panic("unimplemented")
+}
+
+// Conn implements pgx.Rows.
+func (f fakeRows) Conn() *pgx.Conn {
+	panic("unimplemented")
+}
+
+// Err implements pgx.Rows.
+func (f fakeRows) Err() error {
+	panic("unimplemented")
+}
+
+// FieldDescriptions implements pgx.Rows.
+func (f fakeRows) FieldDescriptions() []pgconn.FieldDescription {
+	panic("unimplemented")
+}
+
+// Next implements pgx.Rows.
+func (f fakeRows) Next() bool {
+	return f.next()
+	// res := f.numOfRows > f.nexted
+	// f.nexted++
+	// return res
+}
+
+// RawValues implements pgx.Rows.
+func (f fakeRows) RawValues() [][]byte {
+	panic("unimplemented")
+}
+
+// Scan implements pgx.Rows.
+func (f fakeRows) Scan(dest ...any) error {
+	return f.scan()
+}
+
+// Values implements pgx.Rows.
+func (f fakeRows) Values() ([]any, error) {
+	panic("unimplemented")
+}
+
 type fakePool struct {
-	queryFunc func() (pgx.Rows, error)
+	queryFunc        func() (pgx.Rows, error)
+	querySingleFunc  func(int) pgx.Row
+	getSingleIdParam int
 }
 
 // Exec implements database.DBPool.
@@ -28,7 +85,7 @@ func (f fakePool) Query(ctx context.Context, sql string, args ...any) (pgx.Rows,
 
 // QueryRow implements database.DBPool.
 func (f fakePool) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
-	panic("unimplemented")
+	return f.querySingleFunc(f.getSingleIdParam)
 }
 
 func TestGetAll(t *testing.T) {
@@ -144,6 +201,71 @@ func TestGetAll(t *testing.T) {
 				res:  []models.SwitchEntity{},
 				err:  tests.ErrTest,
 				logs: []string{tests.LogLvlError},
+			},
+		},
+		{
+			pool: fakePool{
+				queryFunc: func() (pgx.Rows, error) {
+					counter := 0
+					rowsCount := 1
+					rows := &fakeRows{
+						next: func() bool {
+							res := rowsCount > counter
+							counter++
+							return res
+						},
+						scan: func() error {
+							return tests.ErrTest
+						},
+					}
+					return rows, nil
+				},
+			},
+			logger: tests.FakeLogger{},
+			expected: struct {
+				res  []models.SwitchEntity
+				err  error
+				logs []string
+			}{
+				res:  []models.SwitchEntity{},
+				err:  tests.ErrTest,
+				logs: []string{tests.LogLvlError},
+			},
+		},
+		{
+			pool: fakePool{
+				queryFunc: func() (pgx.Rows, error) {
+					counter := 0
+					rowsCount := 1
+					rows := &fakeRows{
+						next: func() bool {
+							res := rowsCount > counter
+							counter++
+							return res
+						},
+						scan: func() error {
+							return nil
+						},
+					}
+					defer func() {
+						if !connclosed {
+							panic("GETALL DID NOT CLOSE THE CONNECTION")
+						}
+						// reset for potentially other test cases
+						connclosed = false
+					}()
+					return rows, nil
+				},
+			},
+			logger: tests.FakeLogger{},
+			expected: struct {
+				res  []models.SwitchEntity
+				err  error
+				logs []string
+			}{
+				res:  []models.SwitchEntity{{}},
+				err:  nil,
+				logs: []string{tests.LogLvlTrace},
 			},
 		},
 	}
