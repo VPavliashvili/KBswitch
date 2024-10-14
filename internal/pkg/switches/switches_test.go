@@ -9,10 +9,6 @@ import (
 	"testing"
 )
 
-func intptr(x int) *int {
-	return &x
-}
-
 type fakeRepo struct {
 	getID             func(string, string) (*int, error)
 	getAllReturner    func() ([]models.SwitchEntity, error)
@@ -98,7 +94,7 @@ func TestRemove(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return intptr(123), tests.ErrTest
+					return tests.Intptr(123), tests.ErrTest
 				},
 			},
 			brand: "test",
@@ -114,7 +110,7 @@ func TestRemove(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return intptr(123), nil
+					return tests.Intptr(123), nil
 				},
 				removeAction: func(i int) error {
 					return tests.ErrTest
@@ -133,7 +129,7 @@ func TestRemove(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return intptr(123), nil
+					return tests.Intptr(123), nil
 				},
 				removeAction: func(i int) error {
 					return nil
@@ -228,7 +224,7 @@ func TestUpdate(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return intptr(123), tests.ErrTest
+					return tests.Intptr(123), tests.ErrTest
 				},
 			},
 			in: struct {
@@ -253,7 +249,7 @@ func TestUpdate(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return intptr(123), nil
+					return tests.Intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
 					return nil, nil
@@ -281,7 +277,7 @@ func TestUpdate(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return intptr(123), nil
+					return tests.Intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
 					return nil, tests.ErrTest
@@ -309,7 +305,7 @@ func TestUpdate(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return intptr(123), nil
+					return tests.Intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
 					return &models.SwitchEntity{Model: "tst"}, tests.ErrTest
@@ -337,7 +333,7 @@ func TestUpdate(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(string, string) (*int, error) {
-					return intptr(123), nil
+					return tests.Intptr(123), nil
 				},
 				updateAction: func(i int, se models.SwitchEntity) (*models.SwitchEntity, error) {
 					return &models.SwitchEntity{Model: "tst"}, nil
@@ -388,7 +384,7 @@ func TestAddNew(t *testing.T) {
 		{
 			repo: fakeRepo{
 				getID: func(s1, s2 string) (*int, error) {
-					return intptr(123), nil
+					return tests.Intptr(123), nil
 				},
 			},
 			logger:  tests.FakeLogger{},
@@ -427,7 +423,7 @@ func TestAddNew(t *testing.T) {
 					return nil, nil
 				},
 				addNewAction: func(se models.SwitchEntity) (*int, error) {
-					return intptr(123), tests.ErrTest
+					return tests.Intptr(123), tests.ErrTest
 				},
 			},
 			logger:  tests.FakeLogger{},
@@ -489,14 +485,14 @@ func TestAddNew(t *testing.T) {
 				return nil, nil
 			},
 			addNewAction: func(se models.SwitchEntity) (*int, error) {
-				return intptr(123), nil
+				return tests.Intptr(123), nil
 			},
 		}, logger: tests.FakeLogger{}, reqbody: models.SwitchRequestBody{Name: "testn", Brand: "testb"}, expected: struct {
 			res  *int
 			err  *common.AppError
 			logs []string
 		}{
-			res:  intptr(123),
+			res:  tests.Intptr(123),
 			err:  nil,
 			logs: []string{tests.LogLvlTrace},
 		}},
@@ -529,7 +525,7 @@ func TestGetSingle(t *testing.T) {
 				getSingleReturner: func(int) (*models.SwitchEntity, error) {
 					return nil, tests.ErrTest
 				},
-				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil }},
+				getID: func(s1, s2 string) (*int, error) { return tests.Intptr(123), nil }},
 			logger: tests.FakeLogger{},
 			expected: struct {
 				res  *models.Switch
@@ -546,7 +542,7 @@ func TestGetSingle(t *testing.T) {
 				getSingleReturner: func(int) (*models.SwitchEntity, error) {
 					return nil, nil
 				},
-				getID: func(s1, s2 string) (*int, error) { return intptr(123), nil },
+				getID: func(s1, s2 string) (*int, error) { return tests.Intptr(123), nil },
 			},
 			logger: tests.FakeLogger{},
 			expected: struct {
@@ -626,7 +622,7 @@ func TestGetSingle(t *testing.T) {
 					return &models.SwitchEntity{Model: "name", Manufacturer: "brand"}, nil
 				},
 				getID: func(s1, s2 string) (*int, error) {
-					return intptr(123), nil
+					return tests.Intptr(123), nil
 				},
 			},
 			logger: tests.FakeLogger{},

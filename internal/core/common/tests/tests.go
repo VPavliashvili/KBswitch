@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+func Intptr(x int) *int {
+	return &x
+}
+
 var ErrTest = fmt.Errorf("test")
 
 const (

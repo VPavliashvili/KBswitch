@@ -48,8 +48,8 @@ func (r repo) GetAll(ctx context.Context) ([]models.SwitchEntity, error) {
 
 	for rows.Next() {
 		var s models.SwitchEntity
-		err = rows.Scan(&s.ID, &s.Manufacturer, &s.ActuationType, &s.Lifespan,
-			&s.Model, &s.Image, &s.OperatingForce, &s.ActivationTravel, &s.TotalTravel,
+		err = rows.Scan(&s.ID, &s.Lifespan, &s.OperatingForce, &s.ActivationTravel,
+			&s.TotalTravel, &s.Image, &s.Manufacturer, &s.Model, &s.ActuationType,
 			&s.SoundProfile, &s.TriggerMethod, &s.Profile)
 		if err != nil {
 			r.logger.LogError(err.Error())
@@ -69,10 +69,17 @@ func (r repo) GetID(ctx context.Context, brand string, name string) (*int, error
 }
 
 // GetSingle implements switches.Repo.
-func (r repo) GetSingle(context.Context, int) (*models.SwitchEntity, error) {
-	panic("unimplemented")
-	// query := `SELECT * FROM public.switches WHERE id=$1`
-	// row := r.pool.QueryRow(context.Background(), )
+func (r repo) GetSingle(ctx context.Context, id int) (*models.SwitchEntity, error) {
+	query := `SELECT * FROM public.switches WHERE id=$1`
+	row := r.pool.QueryRow(ctx, query)
+
+	var s models.SwitchEntity
+	row.Scan(&s.ID, &s.Lifespan, &s.OperatingForce, &s.ActivationTravel,
+		&s.TotalTravel, &s.Image, &s.Manufacturer, &s.Model, &s.ActuationType,
+		&s.SoundProfile, &s.TriggerMethod, &s.Profile)
+
+	r.logger.LogTrace(fmt.Sprintf("result is %v", s))
+	return &s, nil
 }
 
 // Remove implements switches.Repo.
