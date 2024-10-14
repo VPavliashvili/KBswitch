@@ -74,9 +74,8 @@ func (f fakeRows) Values() ([]any, error) {
 }
 
 type fakePool struct {
-	queryFunc        func() (pgx.Rows, error)
-	querySingleFunc  func(int) pgx.Row
-	getSingleIdParam int
+	queryFunc       func() (pgx.Rows, error)
+	querySingleFunc func() pgx.Row
 }
 
 // Exec implements database.DBPool.
@@ -91,7 +90,7 @@ func (f fakePool) Query(ctx context.Context, sql string, args ...any) (pgx.Rows,
 
 // QueryRow implements database.DBPool.
 func (f fakePool) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
-	return f.querySingleFunc(f.getSingleIdParam)
+	return f.querySingleFunc()
 }
 
 func assign[T int | float64 | string | []byte](source any, value T) {
@@ -127,6 +126,7 @@ func TestGetSingle(t *testing.T) {
 	cases := []struct {
 		pool     fakePool
 		logger   tests.FakeLogger
+		ID       int
 		expected struct {
 			res  *models.SwitchEntity
 			err  error
@@ -135,8 +135,7 @@ func TestGetSingle(t *testing.T) {
 	}{
 		{
 			pool: fakePool{
-				getSingleIdParam: 123,
-				querySingleFunc: func(i int) pgx.Row {
+				querySingleFunc: func() pgx.Row {
 					row := fakeRow{
 						scan: func(dest ...any) error {
 							scanObject(1, 10, 30, 30, 30, []byte{1, 1}, "mn", "mm", "at", "sp", "tm", "p", dest...)
@@ -172,8 +171,7 @@ func TestGetSingle(t *testing.T) {
 		},
 		{
 			pool: fakePool{
-				getSingleIdParam: 123,
-				querySingleFunc: func(i int) pgx.Row {
+				querySingleFunc: func() pgx.Row {
 					row := fakeRow{
 						scan: func(a ...any) error {
 							return pgx.ErrNoRows
@@ -195,8 +193,7 @@ func TestGetSingle(t *testing.T) {
 		},
 		{
 			pool: fakePool{
-				getSingleIdParam: 123,
-				querySingleFunc: func(i int) pgx.Row {
+				querySingleFunc: func() pgx.Row {
 					row := fakeRow{
 						scan: func(a ...any) error {
 							return tests.ErrTest
@@ -220,7 +217,7 @@ func TestGetSingle(t *testing.T) {
 
 	for _, tc := range cases {
 		sut := repo.New(&tc.logger, tc.pool)
-		got, err := sut.GetSingle(context.Background(), tc.pool.getSingleIdParam)
+		got, err := sut.GetSingle(context.Background(), tc.ID)
 
 		tests.AssertHasError("GetSingle", t, tc.expected.err, err)
 		tests.AssertResultsEqual("GetSingle", t, tc.expected.res, got)

@@ -73,7 +73,7 @@ func (r repo) GetID(ctx context.Context, brand string, name string) (*int, error
 // GetSingle implements switches.Repo.
 func (r repo) GetSingle(ctx context.Context, id int) (*models.SwitchEntity, error) {
 	query := `SELECT * FROM public.switches WHERE id=$1`
-	row := r.pool.QueryRow(ctx, query)
+	row := r.pool.QueryRow(ctx, query, id)
 
 	var s models.SwitchEntity
 	err := row.Scan(&s.ID, &s.Lifespan, &s.OperatingForce, &s.ActivationTravel,
