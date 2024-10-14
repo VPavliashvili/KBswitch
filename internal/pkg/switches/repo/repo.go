@@ -8,6 +8,8 @@ import (
 	"kbswitch/internal/core/common/logging"
 	"kbswitch/internal/core/switches"
 	"kbswitch/internal/core/switches/models"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func New(logger logging.Logger, pool database.DBPool) switches.Repo {
@@ -74,9 +76,17 @@ func (r repo) GetSingle(ctx context.Context, id int) (*models.SwitchEntity, erro
 	row := r.pool.QueryRow(ctx, query)
 
 	var s models.SwitchEntity
-	row.Scan(&s.ID, &s.Lifespan, &s.OperatingForce, &s.ActivationTravel,
+	err := row.Scan(&s.ID, &s.Lifespan, &s.OperatingForce, &s.ActivationTravel,
 		&s.TotalTravel, &s.Image, &s.Manufacturer, &s.Model, &s.ActuationType,
 		&s.SoundProfile, &s.TriggerMethod, &s.Profile)
+	if err == pgx.ErrNoRows {
+		r.logger.LogTrace(fmt.Sprintf("no result found for id: %v", id))
+		return nil, nil
+	}
+	if err != nil {
+		r.logger.LogError(fmt.Sprintf("query error: %s", err.Error()))
+		return nil, err
+	}
 
 	r.logger.LogTrace(fmt.Sprintf("result is %v", s))
 	return &s, nil

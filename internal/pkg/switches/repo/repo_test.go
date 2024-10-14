@@ -170,6 +170,52 @@ func TestGetSingle(t *testing.T) {
 				logs: []string{tests.LogLvlTrace},
 			},
 		},
+		{
+			pool: fakePool{
+				getSingleIdParam: 123,
+				querySingleFunc: func(i int) pgx.Row {
+					row := fakeRow{
+						scan: func(a ...any) error {
+							return pgx.ErrNoRows
+						},
+					}
+					return row
+				},
+			},
+			logger: tests.FakeLogger{},
+			expected: struct {
+				res  *models.SwitchEntity
+				err  error
+				logs []string
+			}{
+				res:  nil,
+				err:  nil,
+				logs: []string{tests.LogLvlTrace},
+			},
+		},
+		{
+			pool: fakePool{
+				getSingleIdParam: 123,
+				querySingleFunc: func(i int) pgx.Row {
+					row := fakeRow{
+						scan: func(a ...any) error {
+							return tests.ErrTest
+						},
+					}
+					return row
+				},
+			},
+			logger: tests.FakeLogger{},
+			expected: struct {
+				res  *models.SwitchEntity
+				err  error
+				logs []string
+			}{
+				res:  nil,
+				err:  tests.ErrTest,
+				logs: []string{tests.LogLvlError},
+			},
+		},
 	}
 
 	for _, tc := range cases {
