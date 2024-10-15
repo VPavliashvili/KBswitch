@@ -55,7 +55,7 @@ func AssertResultsEqual(method string, t *testing.T, want any, got any) {
 
 func AssertHasError(method string, t *testing.T, want error, got error) {
 	if want != nil && got == nil {
-		t.Errorf("in method %s: expected error is not nil %v, when result returned nil: %v", method, want, got)
+		t.Errorf("in method %s: expected error is: %v, when result returned is nil", method, want)
 	}
 }
 

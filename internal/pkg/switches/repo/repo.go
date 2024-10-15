@@ -67,7 +67,22 @@ func (r repo) GetAll(ctx context.Context) ([]models.SwitchEntity, error) {
 
 // GetID implements switches.Repo.
 func (r repo) GetID(ctx context.Context, brand string, name string) (*int, error) {
-	panic("unimplemented")
+	query := "SELECT * FROM public.switches WHERE manufacturer=$1 and model=$2"
+	row := r.pool.QueryRow(ctx, query, brand, name)
+
+	var res int
+	err := row.Scan(&res)
+	if err == pgx.ErrNoRows {
+		r.logger.LogTrace(fmt.Sprintf("no result found for brand,name: %v,%v", brand, name))
+		return nil, nil
+	}
+	if err != nil {
+		r.logger.LogError(err.Error())
+		return nil, err
+	}
+
+	r.logger.LogTrace(fmt.Sprintf("result is %v", res))
+	return &res, nil
 }
 
 // GetSingle implements switches.Repo.

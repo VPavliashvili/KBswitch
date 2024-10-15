@@ -103,7 +103,7 @@ func assign[T int | float64 | string | []byte](source any, value T) {
 	}
 }
 
-func scanObject(id, ls, of int, att, tt float64, img []byte, mn, mm, at, sp, tm, p string, dest ...any) {
+func scanSwitchEntity(id, ls, of int, att, tt float64, img []byte, mn, mm, at, sp, tm, p string, dest ...any) {
 	target := dest[0].([]any)
 
 	assign(target[0], id)
@@ -122,6 +122,106 @@ func scanObject(id, ls, of int, att, tt float64, img []byte, mn, mm, at, sp, tm,
 	dest[0] = target
 }
 
+func TestGetID(t *testing.T) {
+	cases := []struct {
+		pool     fakePool
+		logger   tests.FakeLogger
+		brand    string
+		name     string
+		expected struct {
+			res  *int
+			err  error
+			logs []string
+		}
+	}{
+		{
+			pool: fakePool{
+				querySingleFunc: func() pgx.Row {
+					row := fakeRow{
+						scan: func(...any) error {
+							return tests.ErrTest
+						},
+					}
+					return row
+				},
+			},
+			logger: tests.FakeLogger{},
+			brand:  "",
+			name:   "",
+			expected: struct {
+				res  *int
+				err  error
+				logs []string
+			}{
+				res:  nil,
+				err:  tests.ErrTest,
+				logs: []string{tests.LogLvlError},
+			},
+		},
+		{
+			pool: fakePool{
+				querySingleFunc: func() pgx.Row {
+					row := fakeRow{
+						scan: func(a ...any) error {
+							return pgx.ErrNoRows
+						},
+					}
+					return row
+				},
+			},
+			logger: tests.FakeLogger{},
+			brand:  "",
+			name:   "",
+			expected: struct {
+				res  *int
+				err  error
+				logs []string
+			}{
+				res:  nil,
+				err:  nil,
+				logs: []string{tests.LogLvlTrace},
+			},
+		},
+		{
+			pool: fakePool{
+				querySingleFunc: func() pgx.Row {
+					row := fakeRow{
+						scan: func(dest ...any) error {
+							target := dest[0].([]any)
+							assign(target[0], 123)
+							dest[0] = target
+
+							return nil
+						},
+					}
+					return row
+				},
+			},
+			logger: tests.FakeLogger{},
+			brand:  "",
+			name:   "",
+			expected: struct {
+				res  *int
+				err  error
+				logs []string
+			}{
+				res:  tests.Intptr(123),
+				err:  nil,
+				logs: []string{tests.LogLvlTrace},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		sut := repo.New(&tc.logger, tc.pool)
+		got, err := sut.GetID(context.Background(), tc.brand, tc.name)
+
+		tests.AssertHasError("GetID", t, tc.expected.err, err)
+		tests.AssertResultsEqual("GetID", t, tc.expected.res, got)
+		tests.AssertLogsEqual("GetID", t, tc.expected.logs, tc.logger.Logs)
+	}
+}
+
 func TestGetSingle(t *testing.T) {
 	cases := []struct {
 		pool     fakePool
@@ -138,7 +238,7 @@ func TestGetSingle(t *testing.T) {
 				querySingleFunc: func() pgx.Row {
 					row := fakeRow{
 						scan: func(dest ...any) error {
-							scanObject(1, 10, 30, 30, 30, []byte{1, 1}, "mn", "mm", "at", "sp", "tm", "p", dest...)
+							scanSwitchEntity(1, 10, 30, 30, 30, []byte{1, 1}, "mn", "mm", "at", "sp", "tm", "p", dest...)
 							return nil
 						},
 					}
@@ -249,9 +349,9 @@ func TestGetAll(t *testing.T) {
 						scan: func(dest ...any) error {
 							switch counter {
 							case 1:
-								scanObject(1, 10, 30, 30, 30, []byte{1, 1}, "mn", "mm", "at", "sp", "tm", "p", dest...)
+								scanSwitchEntity(1, 10, 30, 30, 30, []byte{1, 1}, "mn", "mm", "at", "sp", "tm", "p", dest...)
 							case 2:
-								scanObject(2, 20, 40, 40, 40, []byte{2, 2}, "mn2", "mm2", "at2", "sp2", "tm2", "p2", dest...)
+								scanSwitchEntity(2, 20, 40, 40, 40, []byte{2, 2}, "mn2", "mm2", "at2", "sp2", "tm2", "p2", dest...)
 							}
 							return nil
 						},
